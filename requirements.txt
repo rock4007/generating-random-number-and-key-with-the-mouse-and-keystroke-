@@ -1,0 +1,3 @@
+numpy>=1.26
+nistrng>=1.2.3
+pynput>=1.7.7
