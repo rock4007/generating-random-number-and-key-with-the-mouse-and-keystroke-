@@ -34,6 +34,21 @@ class HKDFConfig:
     info: bytes = b"behavioural_entropy_key"
     length: int = 32
 
+    @classmethod
+    def quantum_hardened(cls) -> "HKDFConfig":
+        """Return a quantum-hardened HKDF profile.
+
+        Why this matters cryptographically:
+        - Grover-style attacks can effectively reduce symmetric key strength.
+        - A 512-bit derived key preserves a larger post-quantum security margin.
+        """
+
+        return cls(
+            salt=b"SUMIT_KEY_v2_QUANTUM",
+            info=b"behavioural_entropy_key_quantum_hardened",
+            length=64,
+        )
+
 
 class KeyGenerator:
     """Derives cryptographic keys from one or more entropy chunks."""
@@ -197,6 +212,12 @@ class KeyGenerator:
 
         active_config = config if config is not None else HKDFConfig()
         return cls.derive_key([normalized], active_config)
+
+    @classmethod
+    def generate_quantum_hardened_key(cls, entropy_bytes: bytes | bytearray) -> bytes:
+        """Generate one 512-bit key with quantum-hardened parameters."""
+
+        return cls.generate_key(entropy_bytes=entropy_bytes, config=HKDFConfig.quantum_hardened())
 
 
 if __name__ == "__main__":

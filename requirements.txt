@@ -1,3 +1,7 @@
 numpy>=1.26
 nistrng>=1.2.3
 pynput>=1.7.7
+fastapi>=0.110.0
+uvicorn>=0.27.0
+# Optional: Linux headless (no display server) — user must also be in 'input' group
+# evdev>=1.7.0

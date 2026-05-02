@@ -44,7 +44,12 @@ python main.py
 This is now the default mode. It performs one live capture and outputs:
 
 - A generated random number (64-bit)
-- A generated cryptographic key (256-bit hex)
+- A generated cryptographic key (512-bit hex, quantum-hardened profile)
+
+Security profile notes:
+
+- Default is `quantum` profile: 512-bit HKDF output with domain-separated salt/info.
+- Use `--security-level standard` if you need the legacy 256-bit key profile.
 
 Saved output:
 

@@ -10,15 +10,117 @@ Python version target: 3.11+
 
 from __future__ import annotations
 
+import os
+import platform
+import threading
 from math import atan2, degrees, sqrt
 from threading import Lock
 import time
 from typing import Any
 
-from pynput import keyboard, mouse  # type: ignore[reportMissingModuleSource]
+
+def _use_evdev() -> bool:
+    """Return True if we should use the evdev backend (headless Linux)."""
+    if platform.system() != "Linux":
+        return False
+    has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+    if has_display:
+        return False
+    try:
+        import evdev  # noqa: F401
+        return True
+    except ImportError:
+        return False
 
 
-def _key_to_string(key: keyboard.Key | keyboard.KeyCode) -> str:
+def _capture_mouse_evdev(duration_seconds: float) -> list[dict[str, Any]]:
+    """Capture raw mouse movement via Linux evdev (no X11 / Wayland required).
+
+    Requires the 'evdev' package (pip install evdev) and the user to be in
+    the 'input' group (or running as root) to read /dev/input/event* devices.
+
+    Why this matters:
+    - On headless servers or embedded Linux boards with a $5 USB mouse, there
+      is no display server.  evdev reads motion events directly from the kernel
+      HID layer, giving the same behavioural entropy without a GUI dependency.
+    """
+    import evdev  # type: ignore[import]
+    from evdev import ecodes
+
+    all_paths = evdev.list_devices()
+    mice = []
+    for path in all_paths:
+        try:
+            dev = evdev.InputDevice(path)
+            caps = dev.capabilities()
+            if ecodes.EV_REL in caps and ecodes.REL_X in caps.get(ecodes.EV_REL, []):
+                mice.append(dev)
+        except Exception:
+            pass
+
+    if not mice:
+        raise RuntimeError(
+            "evdev: no mouse device found in /dev/input. "
+            "Ensure the user is in the 'input' group and a mouse is connected."
+        )
+
+    mouse_dev = mice[0]
+    print(f"evdev: using device '{mouse_dev.name}' at {mouse_dev.path}")
+
+    events: list[dict[str, Any]] = []
+    x, y = 0.0, 0.0
+    last_point: dict[str, float] | None = None
+    stop_event = threading.Event()
+
+    def _read_loop() -> None:
+        nonlocal x, y, last_point
+        try:
+            for ev in mouse_dev.read_loop():
+                if stop_event.is_set():
+                    break
+                if ev.type == ecodes.EV_REL:
+                    t = time.time()
+                    if ev.code == ecodes.REL_X:
+                        x += ev.value
+                    elif ev.code == ecodes.REL_Y:
+                        y += ev.value
+                    else:
+                        continue
+
+                    velocity = 0.0
+                    angle = 0.0
+                    if last_point is not None:
+                        dt = t - last_point["timestamp"]
+                        if dt > 0:
+                            dx = x - last_point["x"]
+                            dy = y - last_point["y"]
+                            dist = sqrt(dx * dx + dy * dy)
+                            velocity = dist / dt
+                            angle = degrees(atan2(dy, dx))
+
+                    events.append(
+                        {
+                            "x": x,
+                            "y": y,
+                            "timestamp": t,
+                            "velocity_px_per_s": velocity,
+                            "direction_angle_deg": angle,
+                        }
+                    )
+                    last_point = {"x": x, "y": y, "timestamp": t}
+        except Exception:
+            pass  # device removed or permission error — stop gracefully
+
+    reader = threading.Thread(target=_read_loop, daemon=True)
+    reader.start()
+    time.sleep(duration_seconds)
+    stop_event.set()
+    mouse_dev.close()
+    reader.join(timeout=1.0)
+    return events
+
+
+def _key_to_string(key) -> str:
     """Convert a pynput key object into a stable text label.
 
     Why this matters cryptographically:
@@ -82,6 +184,18 @@ def capture_behaviour(duration_seconds: float = 10.0) -> tuple[list[dict[str, An
         f"{duration_seconds:g} seconds"
     )
 
+    # ------------------------------------------------------------------
+    # Headless Linux path: use evdev if no display server is available
+    # ------------------------------------------------------------------
+    if _use_evdev():
+        mouse_events = _capture_mouse_evdev(duration_seconds)
+        return mouse_events, []  # keyboard not supported over evdev yet
+
+    # ------------------------------------------------------------------
+    # Normal path: pynput (X11 / Wayland / Win32 / Quartz)
+    # ------------------------------------------------------------------
+    from pynput import keyboard, mouse  # type: ignore[reportMissingModuleSource]
+
     mouse_events: list[dict[str, Any]] = []
     keystroke_events: list[dict[str, Any]] = []
 
@@ -129,7 +243,7 @@ def capture_behaviour(duration_seconds: float = 10.0) -> tuple[list[dict[str, An
 
             last_mouse_point = {"x": x, "y": y, "timestamp": event_time}
 
-    def on_press(key: keyboard.Key | keyboard.KeyCode) -> None:
+    def on_press(key) -> None:
         """Record key press timestamp for later dwell-time computation."""
 
         key_label = _key_to_string(key)
@@ -138,7 +252,7 @@ def capture_behaviour(duration_seconds: float = 10.0) -> tuple[list[dict[str, An
         with lock:
             pressed_at[key_label] = event_time
 
-    def on_release(key: keyboard.Key | keyboard.KeyCode) -> None:
+    def on_release(key) -> None:
         """Record release and derive dwell/flight timing features."""
 
         nonlocal last_release_time

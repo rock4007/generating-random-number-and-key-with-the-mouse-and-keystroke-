@@ -1,8 +1,9 @@
 {
-  "capture_duration_seconds": 1.0,
-  "mouse_event_count": 20,
-  "keystroke_event_count": 24,
-  "random_number": 2008119477457912311,
-  "key_hex": "6df4fd48a65486c2bb9377bdb5192308def5fbde8261efa3e78f6b5432a2b3be",
-  "key_bits": 256
+  "capture_duration_seconds": 2.0,
+  "mouse_event_count": 40,
+  "keystroke_event_count": 20,
+  "security_level": "quantum",
+  "random_number": 16224902480225592605,
+  "key_hex": "bc6c00c6a6ff163ed1368184f8dd10252fc99c9dc9408530d659942e1ff80c00855866081410f388f1e777fd6c77f5e21299e428ddaaee59883af89113491b7d",
+  "key_bits": 512
 }
