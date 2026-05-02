@@ -40,6 +40,7 @@ def _derive_random_number_from_key(key_bytes: bytes) -> int:
 def generate_random_number_and_key(
     capture_duration_seconds: float = 10.0,
     capture_fn: Callable[[float], tuple[list[dict[str, Any]], list[dict[str, Any]]]] | None = None,
+    security_level: str = "quantum",
 ) -> dict[str, Any]:
     """Capture behaviour once and output one random number and one key.
 
@@ -56,13 +57,20 @@ def generate_random_number_and_key(
     keystroke_entropy = extract_keystroke_entropy(keystroke_events)
     combined_entropy = pool_entropy(mouse_entropy, keystroke_entropy)
 
-    key_bytes = KeyGenerator.generate_key(combined_entropy)
+    if security_level == "quantum":
+        key_bytes = KeyGenerator.generate_quantum_hardened_key(combined_entropy)
+    elif security_level == "standard":
+        key_bytes = KeyGenerator.generate_key(combined_entropy)
+    else:
+        raise ValueError("security_level must be 'standard' or 'quantum'")
+
     random_number = _derive_random_number_from_key(key_bytes)
 
     output = {
         "capture_duration_seconds": float(capture_duration_seconds),
         "mouse_event_count": len(mouse_events),
         "keystroke_event_count": len(keystroke_events),
+        "security_level": security_level,
         "random_number": random_number,
         "key_hex": key_bytes.hex(),
         "key_bits": len(key_bytes) * 8,
@@ -73,7 +81,8 @@ def generate_random_number_and_key(
     results_path.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
 
     print("Random number generated:", output["random_number"])
-    print("Cryptographic key (hex):", output["key_hex"])
+    print("Security level:", output["security_level"])
+    print(f"Cryptographic key ({output['key_bits']}-bit, hex):", output["key_hex"])
     print("Saved generation output to results/latest_generation.json")
 
     return output
@@ -226,10 +235,19 @@ if __name__ == "__main__":
         default=1000,
         help="Number of keys for experiment mode",
     )
+    parser.add_argument(
+        "--security-level",
+        choices=["standard", "quantum"],
+        default="quantum",
+        help="Security profile for generate mode",
+    )
 
     args = parser.parse_args()
 
     if args.mode == "generate":
-        generate_random_number_and_key(capture_duration_seconds=args.duration)
+        generate_random_number_and_key(
+            capture_duration_seconds=args.duration,
+            security_level=args.security_level,
+        )
     else:
         run_all_experiments(num_keys=args.num_keys, capture_duration_seconds=args.duration)
