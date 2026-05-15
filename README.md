@@ -1,53 +1,50 @@
 # SUMIT KEY
 
-SUMIT KEY is a dissertation-grade research project that derives cryptographic keys from behavioural entropy. It combines mouse movement and keystroke timing data to generate entropy, validates output using NIST SP 800-22, and produces deterministic key material for post-quantum-resistant usage.
+SUMIT KEY is a behavioural entropy research project that derives cryptographic material from mouse motion and keystroke timing. It combines movement jitter, micro-vibration, and typing rhythm into a deterministic key generation pipeline with support for a quantum-hardened output profile.
 
 ## Table of Contents
 
-- [Project Overview](#project-overview)
+- [Overview](#overview)
 - [Features](#features)
 - [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Security Profiles](#security-profiles)
-- [Output Files](#output-files)
-- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Modes](#modes)
+- [Testing](#testing)
+- [Outputs](#outputs)
+- [Project Layout](#project-layout)
 - [Notes](#notes)
 - [License](#license)
 
-## Project Overview
+## Overview
 
-This repository captures user behaviour through mouse movements and keyboard timing, then derives:
+SUMIT KEY captures user behaviour and derives:
 
-- a 64-bit pseudorandom number
-- a cryptographic key derived from entropy pooled across behavioural sources
+- a 64-bit random number
+- deterministic cryptographic key material
+- per-mouse-move binary outputs for movement-driven randomness
 
-The project supports:
-
-- single-shot generation
-- per-mouse-movement output
-- full batch experiments with NIST SP 800-22 validation
+The project is designed for experimentation and validation, not production deployment.
 
 ## Features
 
-- behavioural entropy capture from mouse movement and keystrokes
-- entropy extraction and pooling using SHA3-based processing, including micro-tremor and vibration features from mouse movement
-- deterministic key derivation with standard and quantum-hardened profiles
-- per-move generation that emits one binary string per mouse movement event
-- configurable experiment mode for statistical validation
-- recorded outputs in `results/`
+- mouse and keyboard behavioural entropy capture
+- SHA3-based entropy extraction and pooling
+- standard and quantum-hardened HKDF key derivation
+- per-move generation with one binary output per movement
+- batch experiment mode with NIST SP 800-22 validation
 
 ## Requirements
 
 - Python 3.11 or newer
-- Windows, Linux or macOS desktop environment for `pynput` capture
-- `pip` package manager
+- `pip`
+- desktop environment for `pynput` capture on Windows/macOS/Linux
 
-Optional for Linux headless usage:
+Optional for Linux headless use:
 
-- `evdev` and membership in the `input` group
+- `evdev`
+- membership in the `input` group
 
-## Installation
+## Quick Start
 
 1. Clone the repository:
 
@@ -69,109 +66,77 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage
+## Modes
 
-### Generate a single random number and key
+### Single generation
+
+Run one behavioural capture and derive a key:
 
 ```bash
 python main.py
 ```
 
-This runs a live behavioural capture using the default 10-second duration and outputs:
+### Per-mouse-move generation
 
-- 64-bit random number
-- cryptographic key hex string
-- generation metadata saved to `results/latest_generation.json`
-
-### Run per-mouse-move generation
+Generate one key and one binary string for each captured mouse movement:
 
 ```bash
 python main.py --mode per-move
 ```
 
-This mode generates one key and one random binary string per captured mouse movement and saves the results to `results/per_move_generation.json`.
-Each output record includes:
+This mode writes detailed records to `results/per_move_generation.json`.
 
-- `random_number` — 64-bit derived random value
-- `binary_output` — binary string representation of the derived key
-- `encryption_key_hex` — key material in hex
+### NIST experiment mode
 
-### Run full NIST experiment suite
+Generate a batch of keys and run statistical validation:
 
 ```bash
 python main.py --mode experiments --num-keys 1000
 ```
 
-This executes three experiment streams:
-
-- Experiment A: mouse entropy only
-- Experiment B: keystroke entropy only
-- Experiment C: combined mouse + keystroke entropy
-
-Each experiment outputs validated results and a combined report in `results/combined_experiment_report.txt`.
+The batch output is summarized in `results/combined_experiment_report.txt`.
 
 ### Live demo
+
+Run a short interactive capture demo:
 
 ```bash
 python demo.py
 ```
 
-The demo performs a short live capture and displays generated outputs interactively.
+## Testing
 
-### Testing
-
-Run the test sandbox to validate the entropy and key generation pipeline:
+Validate the entropy pipeline with synthetic data:
 
 ```bash
 python test_sandbox.py
 ```
 
-This executes synthetic tests that validate:
+This test harness checks mouse entropy extraction, keystroke entropy extraction, entropy pooling, key derivation, and deterministic output behavior without requiring GUI input.
 
-- mouse entropy extraction from movement data
-- keystroke entropy extraction from timing data
-- entropy pooling and SHA3-256 hashing
-- deterministic key derivation for both standard and quantum-hardened profiles
-- pipeline determinism (same inputs produce same outputs)
+## Outputs
 
-All tests run without GUI dependencies and are suitable for headless environments.
+- `results/latest_generation.json` — single-run output metadata
+- `results/per_move_generation.json` — per-movement generation records
+- `results/combined_experiment_report.txt` — NIST experiment summary
+- `results/nist_report.txt` — raw NIST validation output
 
-## Security Profiles
+## Project Layout
 
-The generator supports two security levels:
-
-- `quantum`: default mode producing a post-quantum-hardened key profile
-- `standard`: legacy profile for a standard 256-bit key output
-
-Example:
-
-```bash
-python main.py --security-level standard
-```
-
-## Output Files
-
-- `results/latest_generation.json` — single-run generation metadata and outputs
-- `results/per_move_generation.json` — per-mouse-move generation records
-- `results/combined_experiment_report.txt` — consolidated NIST experiment summary
-- `results/nist_report.txt` — raw NIST SP 800-22 validation report
-
-## Project Structure
-
-- `main.py` — main runner for generation and experiments
-- `demo.py` — interactive capture/demo script
-- `capture.py` — behavioural capture implementation
-- `entropy_engine.py` — entropy extraction from mouse and keyboard data
-- `key_generator.py` — deterministic key derivation logic
-- `nist_validator.py` — NIST SP 800-22 validation wrapper
+- `main.py` — generation and experiment runner
+- `demo.py` — interactive behavioural capture demo
+- `capture.py` — mouse and keyboard capture logic
+- `entropy_engine.py` — entropy feature extraction and pooling
+- `key_generator.py` — deterministic key derivation
+- `nist_validator.py` — NIST SP 800-22 wrapper
 - `security.py` — security profile helpers
-- `test_sandbox.py` — unit tests for entropy and key generation pipeline
+- `test_sandbox.py` — synthetic pipeline validation tests
 
 ## Notes
 
-- The repository is intended for research and proof-of-concept usage.
-- Behavioural entropy sources are non-deterministic and require user activity during capture.
-- NIST tests are statistical and are used to assess randomness characteristics, not to certify security.
+- This repository is for research and proof-of-concept usage.
+- Behavioural entropy is non-deterministic and depends on live input.
+- NIST tests assess randomness characteristics; they do not guarantee cryptographic certification.
 
 ## License
 
