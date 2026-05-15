@@ -37,6 +37,14 @@ def _derive_random_number_from_key(key_bytes: bytes) -> int:
     return int.from_bytes(digest[:8], "big")
 
 
+def _bytes_to_binary_string(data: bytes | bytearray) -> str:
+    """Convert bytes into an exact binary string representation."""
+
+    if not isinstance(data, (bytes, bytearray)):
+        raise TypeError("data must be bytes-like")
+    return "".join(f"{byte:08b}" for byte in bytes(data))
+
+
 def generate_random_number_and_key(
     capture_duration_seconds: float = 10.0,
     capture_fn: Callable[[float], tuple[list[dict[str, Any]], list[dict[str, Any]]]] | None = None,
@@ -65,6 +73,7 @@ def generate_random_number_and_key(
         raise ValueError("security_level must be 'standard' or 'quantum'")
 
     random_number = _derive_random_number_from_key(key_bytes)
+    binary_output = _bytes_to_binary_string(key_bytes)
 
     output = {
         "capture_duration_seconds": float(capture_duration_seconds),
@@ -73,6 +82,7 @@ def generate_random_number_and_key(
         "security_level": security_level,
         "random_number": random_number,
         "key_hex": key_bytes.hex(),
+        "binary_output": binary_output,
         "key_bits": len(key_bytes) * 8,
     }
 
@@ -180,11 +190,13 @@ def generate_per_mouse_movement_outputs(
             raise ValueError("security_level must be 'standard' or 'quantum'")
 
         random_number = _derive_random_number_from_key(key_bytes)
+        binary_output = _bytes_to_binary_string(key_bytes)
         per_move_outputs.append(
             {
                 "move_index": idx,
                 "mouse_timestamp": move_time,
                 "random_number": random_number,
+                "binary_output": binary_output,
                 "encryption_key_hex": key_bytes.hex(),
                 "key_bits": len(key_bytes) * 8,
                 "security_level": security_level,

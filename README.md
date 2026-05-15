@@ -31,8 +31,9 @@ The project supports:
 ## Features
 
 - behavioural entropy capture from mouse movement and keystrokes
-- entropy extraction and pooling using SHA3-based processing
+- entropy extraction and pooling using SHA3-based processing, including micro-tremor and vibration features from mouse movement
 - deterministic key derivation with standard and quantum-hardened profiles
+- per-move generation that emits one binary string per mouse movement event
 - configurable experiment mode for statistical validation
 - recorded outputs in `results/`
 
@@ -88,7 +89,12 @@ This runs a live behavioural capture using the default 10-second duration and ou
 python main.py --mode per-move
 ```
 
-This mode generates one key per captured mouse movement and saves the results to `results/per_move_generation.json`.
+This mode generates one key and one random binary string per captured mouse movement and saves the results to `results/per_move_generation.json`.
+Each output record includes:
+
+- `random_number` — 64-bit derived random value
+- `binary_output` — binary string representation of the derived key
+- `encryption_key_hex` — key material in hex
 
 ### Run full NIST experiment suite
 

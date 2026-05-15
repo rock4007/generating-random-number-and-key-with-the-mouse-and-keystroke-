@@ -46,8 +46,8 @@ def test_mouse_entropy_extraction():
         })
 
     entropy_bytes = extract_mouse_entropy(events)
-    assert len(entropy_bytes) == 44, f"Expected 44 bytes, got {len(entropy_bytes)}"
-    assert entropy_bytes != b'\x00' * 44, "Entropy bytes should not be all zeros"
+    assert len(entropy_bytes) == 48, f"Expected 48 bytes, got {len(entropy_bytes)}"
+    assert entropy_bytes != b'\x00' * 48, "Entropy bytes should not be all zeros"
 
     print(f"  ✓ Extracted {len(entropy_bytes)} bytes of mouse entropy")
     return entropy_bytes
@@ -126,6 +126,19 @@ def test_key_derivation():
     return key_std, key_quantum
 
 
+def test_quantum_binary_string():
+    """Test that quantum hardened entropy produces a valid binary string."""
+    print("\n[TEST] Quantum binary string generation...")
+
+    pooled = test_entropy_pooling()
+    binary_string = KeyGenerator.generate_quantum_binary_string(pooled)
+    assert len(binary_string) == 512, f"Expected 512 bit string, got {len(binary_string)}"
+    assert set(binary_string) <= {"0", "1"}, "Binary string should contain only 0 and 1"
+
+    print(f"  ✓ Generated {len(binary_string)}-bit quantum binary string")
+    return binary_string
+
+
 def test_deterministic_behavior():
     """Test that the same input produces the same output (deterministic)."""
     print("\n[TEST] Deterministic behavior...")
@@ -173,6 +186,7 @@ def run_all_tests():
         test_mouse_entropy_extraction,
         test_keystroke_entropy_extraction,
         test_entropy_pooling,
+        test_quantum_binary_string,
         test_key_derivation,
         test_deterministic_behavior,
     ]

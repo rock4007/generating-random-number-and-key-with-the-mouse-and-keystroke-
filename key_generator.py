@@ -219,6 +219,29 @@ class KeyGenerator:
 
         return cls.generate_key(entropy_bytes=entropy_bytes, config=HKDFConfig.quantum_hardened())
 
+    @classmethod
+    def bytes_to_bitstring(cls, data: bytes | bytearray) -> str:
+        """Convert binary key material to a binary string representation."""
+
+        if not isinstance(data, (bytes, bytearray)):
+            raise TypeError("data must be bytes-like")
+        return "".join(f"{byte:08b}" for byte in bytes(data))
+
+    @classmethod
+    def generate_quantum_binary_string(
+        cls,
+        entropy_bytes: bytes | bytearray,
+        bits: int = 512,
+    ) -> str:
+        """Generate a quantum-hardened binary string from behavioural entropy."""
+
+        if bits <= 0 or bits > 512:
+            raise ValueError("bits must be between 1 and 512")
+
+        key_bytes = cls.generate_quantum_hardened_key(entropy_bytes)
+        bit_string = cls.bytes_to_bitstring(key_bytes)
+        return bit_string[:bits]
+
 
 if __name__ == "__main__":
     sample_entropy = b"A" * 32
