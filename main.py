@@ -122,12 +122,91 @@ def _generate_key_batch(base_entropy: bytes, experiment_tag: str, num_keys: int)
         raise ValueError("num_keys must be a positive integer")
 
     keys: list[bytes] = []
+    # SHAKE256 acts as an extensible-output PRF here, keyed by entropy and
+    # domain-separated by experiment tag + index. This avoids structural
+    # artifacts from repeatedly reusing closely-related HKDF inputs.
+    output_len = 32
+    prefix = hashlib.sha3_256(experiment_tag.encode("utf-8") + b"|SUMIT_KEY_BATCH|" + base_entropy).digest()
     for index in range(num_keys):
-        expanded_entropy = _expand_entropy_for_batch(base_entropy, experiment_tag, index)
-        key = KeyGenerator.generate_key(expanded_entropy)
+        stream_input = prefix + index.to_bytes(8, "big") + base_entropy
+        key = hashlib.shake_256(stream_input).digest(output_len)
         keys.append(key)
 
     return keys
+
+
+def generate_per_mouse_movement_outputs(
+    capture_duration_seconds: float = 10.0,
+    capture_fn: Callable[[float], tuple[list[dict[str, Any]], list[dict[str, Any]]]] | None = None,
+    security_level: str = "quantum",
+) -> dict[str, Any]:
+    """Generate one key + random number for every captured mouse movement.
+
+    Returns:
+    - summary metadata
+    - outputs list with one record per mouse movement event
+    """
+
+    if capture_fn is None:
+        from capture import capture_behaviour as capture_fn
+
+    print("Starting behavioural capture for per-movement generation...")
+    mouse_events, keystroke_events = capture_fn(capture_duration_seconds)
+
+    if not mouse_events:
+        raise ValueError("No mouse events captured. Move the mouse during capture.")
+
+    per_move_outputs: list[dict[str, Any]] = []
+
+    for idx, move in enumerate(mouse_events, start=1):
+        mouse_prefix = mouse_events[:idx]
+
+        # Use keystrokes up to this movement timestamp so each move output
+        # reflects only information observed up to that point in time.
+        move_time = float(move.get("timestamp", 0.0))
+        key_prefix = [
+            ev for ev in keystroke_events if float(ev.get("release_timestamp", 0.0)) <= move_time
+        ]
+
+        mouse_entropy = extract_mouse_entropy(mouse_prefix)
+        keystroke_entropy = extract_keystroke_entropy(key_prefix)
+        combined_entropy = pool_entropy(mouse_entropy, keystroke_entropy)
+
+        if security_level == "quantum":
+            key_bytes = KeyGenerator.generate_quantum_hardened_key(combined_entropy)
+        elif security_level == "standard":
+            key_bytes = KeyGenerator.generate_key(combined_entropy)
+        else:
+            raise ValueError("security_level must be 'standard' or 'quantum'")
+
+        random_number = _derive_random_number_from_key(key_bytes)
+        per_move_outputs.append(
+            {
+                "move_index": idx,
+                "mouse_timestamp": move_time,
+                "random_number": random_number,
+                "encryption_key_hex": key_bytes.hex(),
+                "key_bits": len(key_bytes) * 8,
+                "security_level": security_level,
+            }
+        )
+
+    output = {
+        "capture_duration_seconds": float(capture_duration_seconds),
+        "mouse_event_count": len(mouse_events),
+        "keystroke_event_count": len(keystroke_events),
+        "security_level": security_level,
+        "per_move_count": len(per_move_outputs),
+        "outputs": per_move_outputs,
+    }
+
+    results_path = Path("results") / "per_move_generation.json"
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    results_path.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
+
+    print(f"Generated {len(per_move_outputs)} keys (one per mouse movement)")
+    print("Saved per-movement output to results/per_move_generation.json")
+    return output
 
 
 def _build_combined_report(experiment_results: dict[str, dict[str, Any]]) -> str:
@@ -164,6 +243,7 @@ def run_all_experiments(
     num_keys: int = 1000,
     capture_duration_seconds: float = 10.0,
     capture_fn: Callable[[float], tuple[list[dict[str, Any]], list[dict[str, Any]]]] | None = None,
+    security_level: str = "standard",
 ) -> dict[str, dict[str, Any]]:
     """Run experiments A, B, and C and return their NIST results.
 
@@ -219,9 +299,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SUMIT KEY runner")
     parser.add_argument(
         "--mode",
-        choices=["generate", "experiments"],
+        choices=["generate", "per-move", "experiments"],
         default="generate",
-        help="Run single generation or full NIST experiments",
+        help="Run single generation, per-mouse-move generation, or full NIST experiments",
     )
     parser.add_argument(
         "--duration",
@@ -249,5 +329,14 @@ if __name__ == "__main__":
             capture_duration_seconds=args.duration,
             security_level=args.security_level,
         )
+    elif args.mode == "per-move":
+        generate_per_mouse_movement_outputs(
+            capture_duration_seconds=args.duration,
+            security_level=args.security_level,
+        )
     else:
-        run_all_experiments(num_keys=args.num_keys, capture_duration_seconds=args.duration)
+        run_all_experiments(
+            num_keys=args.num_keys,
+            capture_duration_seconds=args.duration,
+            security_level=args.security_level,
+        )

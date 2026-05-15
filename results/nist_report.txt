@@ -2,12 +2,12 @@ NIST SP 800-22 RESULTS - SUMIT KEY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Test Name                      Pass Rate  Status
 Frequency (Monobit)             100.0%   ✓ PASS
-Block Frequency                 100.0%   ✓ PASS
-Runs                             90.0%   ✗ FAIL
-Longest Run of Ones             100.0%   ✓ PASS
-Binary Matrix Rank              100.0%   ✓ PASS
+Block Frequency                  90.0%   ✗ FAIL
+Runs                            100.0%   ✓ PASS
+Longest Run of Ones              95.0%   ✓ PASS
+Binary Matrix Rank               95.0%   ✓ PASS
 Discrete Fourier Transform        0.0%   ✗ FAIL
-Non-overlapping Template Matching   70.0%   ✗ FAIL
+Non-overlapping Template Matching   75.0%   ✗ FAIL
 Overlapping Template Matching     0.0%   • N/A
 Universal Statistical             0.0%   • N/A
 Linear Complexity                 0.0%   • N/A
@@ -15,12 +15,12 @@ Serial                            0.0%   ✗ FAIL
 Approximate Entropy               0.0%   ✗ FAIL
 Cumulative Sums                   0.0%   ✗ FAIL
 Random Excursions                 0.0%   ✗ FAIL
-Random Excursions Variant        80.0%   ✗ FAIL
+Random Excursions Variant        45.0%   ✗ FAIL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Overall: 4/12 eligible tests passed
 Keys evaluated: 4000
 Total bits evaluated: 1024000
-Sequence count: 10
+Sequence count: 20
 Recommended bits for full battery coverage: 1000000
 Estimated keys needed for full coverage: 3907
 Threshold: >=95.0% pass rate per test (proportion mode)
