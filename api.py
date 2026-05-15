@@ -28,17 +28,29 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import logging
 import os
 import platform
 import sys
 import time
-from typing import Any
+from typing import Any, Optional
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+from security import (
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+    ThreatLogger,
+    threat_logger,
+    resource_limits,
+    validate_duration,
+    validate_security_level,
+    register_exception_handlers,
+)
 
 # ---------------------------------------------------------------------------
 # Logging — set up early so every import below can emit debug lines
@@ -53,7 +65,11 @@ log = logging.getLogger("sumit_key_api")
 # ---------------------------------------------------------------------------
 # Internal imports (project modules)
 # ---------------------------------------------------------------------------
-from main import _derive_random_number_from_key, generate_random_number_and_key  # noqa: E402
+from main import (  # noqa: E402
+    generate_per_mouse_movement_outputs,
+    generate_random_number_and_key,
+    run_all_experiments,
+)
 
 # ---------------------------------------------------------------------------
 # Backend detection
@@ -104,13 +120,28 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# Allow calls from any origin (useful when embedding in a web front-end)
+# ---------------------------------------------------------------------------
+# Security Middleware
+# ---------------------------------------------------------------------------
+
+# Rate limiting: 10 req/min, 100 req/hour per IP
+app.add_middleware(RateLimitMiddleware, requests_per_minute=10, requests_per_hour=100)
+
+# Security headers (HSTS, X-Frame-Options, CSP, etc.)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CORS: Allow only localhost and optionally CORS_ORIGINS env var
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
+    allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "Authorization"],
 )
+
+# Register exception handlers (prevent stack trace leaks)
+register_exception_handlers(app)
 
 
 # ---------------------------------------------------------------------------
@@ -141,45 +172,46 @@ def info() -> dict[str, Any]:
 
 @app.post("/generate", summary="Generate a cryptographic key from mouse entropy")
 def generate(
-    duration: float = Query(
-        default=10.0,
-        ge=1.0,
-        le=60.0,
-        description="Capture window in seconds. Move your mouse during this time.",
-    ),
-    security_level: str = Query(
-        default="quantum",
-        description="Key strength: 'quantum' = 512-bit (recommended) or 'standard' = 256-bit.",
-    ),
-    debug: bool = Query(
-        default=False,
-        description="Include extra debug metrics in the response.",
-    ),
+    request: Request,
+    duration: float = Query(default=10.0, description="Capture duration in seconds (1-60)."),
+    security_level: str = Query(default="quantum", description="'quantum' (512-bit) or 'standard' (256-bit)."),
+    debug: bool = Query(default=False, description="Include debug metrics."),
 ) -> dict[str, Any]:
     """
     Run the entropy capture pipeline and return a random number + cryptographic key.
 
     **How to use:**
-    1. Call this endpoint.
-    2. Move your mouse naturally for the `duration` seconds.
-    3. The response will contain a unique key derived from your movement patterns.
-
-    The key is generated using SHA3-256 entropy pooling → HKDF derivation
-    and is never stored or transmitted — it is only returned in this response.
+    1. Move your mouse naturally for the `duration` seconds.
+    2. Receive a unique key derived from your movement patterns.
+    
+    Security: Key is never stored or transmitted — only returned in this response.
     """
-    if security_level not in ("quantum", "standard"):
-        raise HTTPException(status_code=422, detail="security_level must be 'quantum' or 'standard'")
+    client_ip = request.client.host if request.client else "unknown"
+    
+    # Validate inputs
+    try:
+        duration = validate_duration(duration)
+        security_level = validate_security_level(security_level)
+    except HTTPException as exc:
+        threat_logger.log_threat("INVALID_INPUT", client_ip, f"{exc.detail}")
+        raise
+    
+    # Check resource availability
+    if not resource_limits.acquire():
+        threat_logger.log_threat("RESOURCE_EXHAUSTED", client_ip, "Max concurrent captures reached")
+        raise HTTPException(
+            status_code=503,
+            detail="Server busy: max concurrent captures reached. Try again in a few seconds.",
+        )
 
-    log.info(
-        "POST /generate  duration=%.1fs  security=%s  debug=%s",
-        duration, security_level, debug,
-    )
+    log.info("POST /generate from %s: duration=%.1fs security=%s", client_ip, duration, security_level)
 
     try:
         _assert_capture_possible()
     except RuntimeError as exc:
         log.error("Capture backend unavailable: %s", exc)
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        threat_logger.log_threat("CAPTURE_UNAVAILABLE", client_ip, str(exc))
+        raise HTTPException(status_code=503, detail="Capture backend unavailable") from exc
 
     t_start = time.time()
     try:
@@ -189,7 +221,10 @@ def generate(
         )
     except Exception as exc:
         log.exception("Key generation failed")
-        raise HTTPException(status_code=500, detail=f"Generation error: {exc}") from exc
+        threat_logger.log_threat("GENERATION_FAILURE", client_ip, type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Key generation failed") from exc
+    finally:
+        resource_limits.release()
 
     elapsed = time.time() - t_start
     log.info(
@@ -216,7 +251,119 @@ def generate(
             "api_version": "2.0.0",
         }
 
+    log.info("Generation success for %s: %d-bit key, %d mouse events", client_ip, result["key_bits"], result["mouse_event_count"])
     return response
+
+
+@app.post("/generate-per-move", summary="Generate one key per mouse movement")
+def generate_per_move(
+    request: Request,
+    duration: float = Query(default=10.0, description="Capture duration in seconds (1-60)."),
+    security_level: str = Query(default="quantum", description="'quantum' (512-bit) or 'standard' (256-bit)."),
+    max_items: int = Query(default=200, ge=1, le=2000, description="Max per-move records returned in response."),
+) -> dict[str, Any]:
+    """Capture behaviour and generate key/random output for every mouse move."""
+
+    client_ip = request.client.host if request.client else "unknown"
+
+    try:
+        duration = validate_duration(duration)
+        security_level = validate_security_level(security_level)
+    except HTTPException as exc:
+        threat_logger.log_threat("INVALID_INPUT", client_ip, f"{exc.detail}")
+        raise
+
+    if not resource_limits.acquire():
+        threat_logger.log_threat("RESOURCE_EXHAUSTED", client_ip, "Max concurrent captures reached")
+        raise HTTPException(status_code=503, detail="Server busy. Try again shortly.")
+
+    try:
+        _assert_capture_possible()
+        result = generate_per_mouse_movement_outputs(
+            capture_duration_seconds=duration,
+            security_level=security_level,
+        )
+    except Exception as exc:
+        threat_logger.log_threat("PER_MOVE_GENERATION_FAILURE", client_ip, type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Per-move generation failed") from exc
+    finally:
+        resource_limits.release()
+
+    outputs = result.get("outputs", [])
+    trimmed_outputs = outputs[:max_items]
+    return {
+        "status": "ok",
+        "security_level": result["security_level"],
+        "capture_duration_seconds": result["capture_duration_seconds"],
+        "mouse_event_count": result["mouse_event_count"],
+        "keystroke_event_count": result["keystroke_event_count"],
+        "per_move_count": result["per_move_count"],
+        "returned_count": len(trimmed_outputs),
+        "outputs": trimmed_outputs,
+    }
+
+
+@app.post("/nist/run", summary="Run full NIST experiments")
+def nist_run(
+    request: Request,
+    num_keys: int = Query(default=4000, ge=500, le=20000, description="Keys per experiment."),
+    duration: float = Query(default=4.0, description="Behaviour capture duration in seconds (1-60)."),
+) -> dict[str, Any]:
+    """Run Experiments A/B/C and return condensed NIST summary."""
+
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        duration = validate_duration(duration)
+    except HTTPException as exc:
+        threat_logger.log_threat("INVALID_INPUT", client_ip, f"{exc.detail}")
+        raise
+
+    if not resource_limits.acquire():
+        threat_logger.log_threat("RESOURCE_EXHAUSTED", client_ip, "Max concurrent captures reached")
+        raise HTTPException(status_code=503, detail="Server busy. Try again shortly.")
+
+    try:
+        _assert_capture_possible()
+        results = run_all_experiments(num_keys=num_keys, capture_duration_seconds=duration)
+    except Exception as exc:
+        threat_logger.log_threat("NIST_RUN_FAILURE", client_ip, type(exc).__name__)
+        raise HTTPException(status_code=500, detail="NIST run failed") from exc
+    finally:
+        resource_limits.release()
+
+    compact: dict[str, Any] = {}
+    for name, item in results.items():
+        compact[name] = {
+            "overall_passed_tests": item["overall_passed_tests"],
+            "overall_eligible_tests": item["overall_eligible_tests"],
+            "overall_pass_rate_percent": item["overall_pass_rate_percent"],
+            "sequence_count": item["sequence_count"],
+            "total_bits": item["total_bits"],
+            "scoring_mode": item["scoring_mode"],
+        }
+
+    return {
+        "status": "ok",
+        "num_keys": num_keys,
+        "capture_duration_seconds": duration,
+        "results": compact,
+    }
+
+
+@app.get("/threat-stats", summary="Threat detection statistics (admin)")
+def threat_stats() -> dict[str, Any]:
+    """Return security threat statistics and IP blocklist.
+    
+    **Note:** This endpoint should be protected by firewall rules in production.
+    Only access from internal/localhost.
+    """
+    return threat_logger.get_stats()
+
+
+@app.get("/resource-status", summary="Current resource usage")
+def resource_status() -> dict[str, Any]:
+    """Return current resource allocation (concurrent captures, etc.)."""
+    return resource_limits.get_status()
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +371,6 @@ def generate(
 # ---------------------------------------------------------------------------
 
 def _parse_args():
-    import argparse
     parser = argparse.ArgumentParser(
         description="SUMIT KEY API — behavioural entropy key generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -235,6 +381,10 @@ Examples:
   python api.py --host 0.0.0.0        # expose to LAN (any laptop on network)
   python api.py --port 9000           # custom port
   DISPLAY=:99 python api.py           # headless Linux with Xvfb
+
+Environment variables:
+  CORS_ORIGINS                         # comma-separated list of allowed CORS origins
+  SUMIT_API_KEY                        # if set, enables API key auth (optional)
 
 Tip: on headless Linux start Xvfb first:
   Xvfb :99 -screen 0 1024x768x24 &
