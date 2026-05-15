@@ -68,6 +68,7 @@ def extract_mouse_entropy(mouse_events: list[dict[str, Any]]) -> bytes:
     velocities: list[float] = []
     directions: list[float] = []
     tremor_steps: list[float] = []
+    vibration_steps: list[float] = []
 
     for event in mouse_events:
         velocity = float(event.get("velocity_px_per_s", 0.0))
@@ -90,6 +91,10 @@ def extract_mouse_entropy(mouse_events: list[dict[str, Any]]) -> bytes:
         # steps under 3 pixels to isolate fine-grained involuntary motion.
         if 0.0 < step_distance < 3.0:
             tremor_steps.append(step_distance)
+        # Vibration captures slightly larger jitter-like movement that still
+        # reflects involuntary hand or trackpad motion.
+        elif 0.0 < step_distance < 5.0:
+            vibration_steps.append(step_distance)
 
     direction_changes = 0
     for idx in range(1, len(directions)):
@@ -108,13 +113,14 @@ def extract_mouse_entropy(mouse_events: list[dict[str, Any]]) -> bytes:
         if tremor_steps
         else 0.0
     )
+    micro_vibration_count = len(vibration_steps)
 
     mean_velocity = _safe_mean(velocities)
     velocity_std = _safe_stdev(velocities)
 
     # Deterministic binary layout keeps output stable for the same input.
     return struct.pack(
-        ">4d3I",
+        ">4d4I",
         mean_velocity,
         velocity_std,
         direction_change_frequency,
@@ -122,6 +128,7 @@ def extract_mouse_entropy(mouse_events: list[dict[str, Any]]) -> bytes:
         len(mouse_events),
         len(directions),
         len(tremor_steps),
+        micro_vibration_count,
     )
 
 
