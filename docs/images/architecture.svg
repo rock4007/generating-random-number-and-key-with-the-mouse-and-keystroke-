@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="'Segoe UI', system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="100%" style="stop-color:#161b22"/>
+    </linearGradient>
+    <linearGradient id="inputGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1f6feb"/>
+      <stop offset="100%" style="stop-color:#388bfd"/>
+    </linearGradient>
+    <linearGradient id="classicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a5c"/>
+      <stop offset="100%" style="stop-color:#0d2137"/>
+    </linearGradient>
+    <linearGradient id="quantumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3a1a5c"/>
+      <stop offset="100%" style="stop-color:#210d37"/>
+    </linearGradient>
+    <linearGradient id="vaultGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a1a"/>
+      <stop offset="100%" style="stop-color:#0d210d"/>
+    </linearGradient>
+    <linearGradient id="threatGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#5c1a1a"/>
+      <stop offset="100%" style="stop-color:#7a2020"/>
+    </linearGradient>
+    <linearGradient id="apiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a4a1a"/>
+      <stop offset="100%" style="stop-color:#1f6020"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#388bfd"/>
+    </marker>
+    <marker id="arrowWhite" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="620" fill="url(#bgGrad)" rx="12"/>
+  <rect width="900" height="620" fill="none" stroke="#30363d" stroke-width="1" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="36" text-anchor="middle" fill="#f0f6fc" font-size="18" font-weight="700" letter-spacing="2">SUMIT KEY — Security Architecture</text>
+  <text x="450" y="54" text-anchor="middle" fill="#8b949e" font-size="11">Behavioural Entropy · Post-Quantum Hybrid · Zero-Knowledge · High-Voltage Vault</text>
+
+  <!-- ═══ INPUT LAYER ═══ -->
+  <rect x="50" y="72" width="800" height="62" rx="8" fill="url(#inputGrad)" opacity="0.15" stroke="#388bfd" stroke-width="1"/>
+  <text x="450" y="92" text-anchor="middle" fill="#388bfd" font-size="11" font-weight="700" letter-spacing="1">INPUT LAYER</text>
+  <rect x="90" y="98" width="190" height="26" rx="5" fill="#1f6feb" opacity="0.25" stroke="#388bfd" stroke-width="0.8"/>
+  <text x="185" y="115" text-anchor="middle" fill="#79c0ff" font-size="11">Mouse micro-jitter &amp; trajectory</text>
+  <rect x="305" y="98" width="190" height="26" rx="5" fill="#1f6feb" opacity="0.25" stroke="#388bfd" stroke-width="0.8"/>
+  <text x="400" y="115" text-anchor="middle" fill="#79c0ff" font-size="11">Keystroke inter-arrival timing</text>
+  <rect x="520" y="98" width="190" height="26" rx="5" fill="#1f6feb" opacity="0.25" stroke="#388bfd" stroke-width="0.8"/>
+  <text x="615" y="115" text-anchor="middle" fill="#79c0ff" font-size="11">Vibration jitter scoring</text>
+  <rect x="720" y="98" width="110" height="26" rx="5" fill="#1f6feb" opacity="0.25" stroke="#388bfd" stroke-width="0.8"/>
+  <text x="775" y="115" text-anchor="middle" fill="#79c0ff" font-size="11">OS CSPRNG</text>
+
+  <!-- Arrow down -->
+  <line x1="450" y1="134" x2="450" y2="155" stroke="#388bfd" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+
+  <!-- ═══ ENTROPY ENGINE ═══ -->
+  <rect x="200" y="158" width="500" height="62" rx="8" fill="#161b22" stroke="#388bfd" stroke-width="1.2"/>
+  <text x="450" y="178" text-anchor="middle" fill="#388bfd" font-size="11" font-weight="700" letter-spacing="1">ENTROPY ENGINE</text>
+  <text x="450" y="196" text-anchor="middle" fill="#c9d1d9" font-size="10.5">SHA3-512 feature extraction · pool merging · SP 800-90B health checks</text>
+  <text x="450" y="212" text-anchor="middle" fill="#8b949e" font-size="10">→ 512-bit behavioural entropy pool</text>
+
+  <!-- Arrow split down to 3 stacks -->
+  <line x1="450" y1="220" x2="450" y2="248" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="450" y1="248" x2="175" y2="248" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="450" y1="248" x2="725" y2="248" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="175" y1="248" x2="175" y2="265" stroke="#8b949e" stroke-width="1.2" marker-end="url(#arrowWhite)"/>
+  <line x1="450" y1="248" x2="450" y2="265" stroke="#8b949e" stroke-width="1.2" marker-end="url(#arrowWhite)"/>
+  <line x1="725" y1="248" x2="725" y2="265" stroke="#8b949e" stroke-width="1.2" marker-end="url(#arrowWhite)"/>
+
+  <!-- ═══ STACK A — Classical ═══ -->
+  <rect x="50" y="268" width="240" height="152" rx="8" fill="url(#classicGrad)" stroke="#1f6feb" stroke-width="1.2"/>
+  <text x="170" y="288" text-anchor="middle" fill="#1f6feb" font-size="10.5" font-weight="700" letter-spacing="1">STACK A — CLASSICAL</text>
+  <text x="170" y="306" text-anchor="middle" fill="#79c0ff" font-size="10">HKDF-SHA3-512</text>
+  <line x1="80" y1="312" x2="260" y2="312" stroke="#1f6feb" stroke-width="0.5" opacity="0.4"/>
+  <text x="170" y="326" text-anchor="middle" fill="#c9d1d9" font-size="10">AES-256-GCM encryption</text>
+  <text x="170" y="342" text-anchor="middle" fill="#c9d1d9" font-size="10">0.3 s rotating-key envelope</text>
+  <text x="170" y="358" text-anchor="middle" fill="#c9d1d9" font-size="10">Threat-gated encrypt/decrypt</text>
+  <text x="170" y="374" text-anchor="middle" fill="#c9d1d9" font-size="10">Session identity binding (AAD)</text>
+  <rect x="70" y="384" width="200" height="22" rx="4" fill="#1f6feb" opacity="0.18" stroke="#1f6feb" stroke-width="0.6"/>
+  <text x="170" y="399" text-anchor="middle" fill="#79c0ff" font-size="10" font-weight="600">advanced_security.py</text>
+
+  <!-- ═══ STACK B — Post-Quantum ═══ -->
+  <rect x="330" y="268" width="240" height="152" rx="8" fill="url(#quantumGrad)" stroke="#bc8cff" stroke-width="1.2"/>
+  <text x="450" y="288" text-anchor="middle" fill="#bc8cff" font-size="10.5" font-weight="700" letter-spacing="1">STACK B — POST-QUANTUM</text>
+  <text x="450" y="306" text-anchor="middle" fill="#d2a8ff" font-size="10">ML-KEM-1024 (FIPS 203)</text>
+  <line x1="360" y1="312" x2="540" y2="312" stroke="#bc8cff" stroke-width="0.5" opacity="0.4"/>
+  <text x="450" y="326" text-anchor="middle" fill="#c9d1d9" font-size="10">Argon2id memory-hard KDF</text>
+  <text x="450" y="342" text-anchor="middle" fill="#c9d1d9" font-size="10">HKDF-SHA3-512 session key</text>
+  <text x="450" y="358" text-anchor="middle" fill="#c9d1d9" font-size="10">AES-256-GCM (hardened nonce)</text>
+  <text x="450" y="374" text-anchor="middle" fill="#c9d1d9" font-size="10">ek=1568 B · dk=3168 B · ct=1568 B</text>
+  <rect x="350" y="384" width="200" height="22" rx="4" fill="#bc8cff" opacity="0.18" stroke="#bc8cff" stroke-width="0.6"/>
+  <text x="450" y="399" text-anchor="middle" fill="#d2a8ff" font-size="10" font-weight="600">crypto_tools.py</text>
+
+  <!-- ═══ STACK C — ZKP / Vault ═══ -->
+  <rect x="610" y="268" width="240" height="152" rx="8" fill="url(#vaultGrad)" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="730" y="288" text-anchor="middle" fill="#3fb950" font-size="10.5" font-weight="700" letter-spacing="1">STACK C — ZKP / VAULT</text>
+  <text x="730" y="306" text-anchor="middle" fill="#56d364" font-size="10">Schnorr ZKP (RFC 3526 2048-bit)</text>
+  <line x1="640" y1="312" x2="820" y2="312" stroke="#3fb950" stroke-width="0.5" opacity="0.4"/>
+  <text x="730" y="326" text-anchor="middle" fill="#c9d1d9" font-size="10">Shamir SSS over GF(2⁸)</text>
+  <text x="730" y="342" text-anchor="middle" fill="#c9d1d9" font-size="10">High-Voltage Vault (TTL + burn)</text>
+  <text x="730" y="358" text-anchor="middle" fill="#c9d1d9" font-size="10">MITM Shield wire protocol</text>
+  <text x="730" y="374" text-anchor="middle" fill="#c9d1d9" font-size="10">HMAC-SHA3-512 envelope</text>
+  <rect x="630" y="384" width="200" height="22" rx="4" fill="#3fb950" opacity="0.18" stroke="#3fb950" stroke-width="0.6"/>
+  <text x="730" y="399" text-anchor="middle" fill="#56d364" font-size="10" font-weight="600">vault.py</text>
+
+  <!-- Arrows down to threat layer -->
+  <line x1="170" y1="420" x2="170" y2="442" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="170" y1="442" x2="450" y2="442" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="450" y1="420" x2="450" y2="442" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="730" y1="420" x2="730" y2="442" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="730" y1="442" x2="450" y2="442" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="450" y1="442" x2="450" y2="458" stroke="#8b949e" stroke-width="1.2" marker-end="url(#arrowWhite)"/>
+
+  <!-- ═══ THREAT DETECTION ═══ -->
+  <rect x="100" y="460" width="700" height="66" rx="8" fill="url(#threatGrad)" stroke="#f85149" stroke-width="1.2"/>
+  <text x="450" y="480" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700" letter-spacing="1">THREAT DETECTION LAYER</text>
+  <text x="450" y="498" text-anchor="middle" fill="#ffa198" font-size="10">Honeypot · Replay detection · Machine-timing CV · Entropy anomaly · Brute-force rate · Probe-rate</text>
+  <text x="450" y="514" text-anchor="middle" fill="#8b949e" font-size="10">Decision pipeline:  ALLOW  →  MONITOR  →  QUARANTINE  →  BLOCK</text>
+
+  <!-- Arrow down -->
+  <line x1="450" y1="526" x2="450" y2="544" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arrowWhite)"/>
+
+  <!-- ═══ API / SERVERLESS ═══ -->
+  <rect x="100" y="546" width="700" height="54" rx="8" fill="url(#apiGrad)" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="450" y="566" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700" letter-spacing="1">API &amp; SERVERLESS SURFACE</text>
+  <text x="450" y="584" text-anchor="middle" fill="#c9d1d9" font-size="10">FastAPI REST (20+ endpoints)  ·  AWS Lambda  ·  GCP Cloud Functions  ·  Azure Functions</text>
+
+  <!-- Footer -->
+  <text x="450" y="612" text-anchor="middle" fill="#484f58" font-size="9">Copyright (c) 2026 Soumodeep Guha (rock4007) · Proprietary &amp; MIT Dual License</text>
+</svg>

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 200" font-family="'Segoe UI', system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="100%" style="stop-color:#161b22"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#388bfd"/>
+    </marker>
+  </defs>
+
+  <rect width="860" height="200" fill="url(#bg)" rx="10"/>
+  <rect width="860" height="200" fill="none" stroke="#30363d" stroke-width="1" rx="10"/>
+  <text x="430" y="24" text-anchor="middle" fill="#f0f6fc" font-size="13" font-weight="700" letter-spacing="1.5">QUANTUM HYBRID KEY DERIVATION FLOW</text>
+
+  <!-- Step boxes -->
+  <!-- Step 1 -->
+  <rect x="20" y="44" width="130" height="62" rx="6" fill="#0d2137" stroke="#1f6feb" stroke-width="1.2"/>
+  <text x="85" y="64" text-anchor="middle" fill="#388bfd" font-size="10" font-weight="700">BEHAVIOUR</text>
+  <text x="85" y="80" text-anchor="middle" fill="#c9d1d9" font-size="9.5">Mouse + Keystrokes</text>
+  <text x="85" y="95" text-anchor="middle" fill="#8b949e" font-size="9">SHA3-512 pool</text>
+
+  <line x1="150" y1="75" x2="178" y2="75" stroke="#388bfd" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 2 -->
+  <rect x="180" y="44" width="130" height="62" rx="6" fill="#0d2137" stroke="#1f6feb" stroke-width="1.2"/>
+  <text x="245" y="64" text-anchor="middle" fill="#388bfd" font-size="10" font-weight="700">ML-KEM-1024</text>
+  <text x="245" y="80" text-anchor="middle" fill="#c9d1d9" font-size="9.5">Key encapsulation</text>
+  <text x="245" y="95" text-anchor="middle" fill="#8b949e" font-size="9">ek / dk / ct / ss</text>
+
+  <line x1="310" y1="75" x2="338" y2="75" stroke="#388bfd" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 3 -->
+  <rect x="340" y="44" width="130" height="62" rx="6" fill="#3a1a5c" stroke="#bc8cff" stroke-width="1.2"/>
+  <text x="405" y="64" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="700">ARGON2ID</text>
+  <text x="405" y="80" text-anchor="middle" fill="#c9d1d9" font-size="9.5">Memory-hard KDF</text>
+  <text x="405" y="95" text-anchor="middle" fill="#8b949e" font-size="9">t=3 · m=64MB · 64B out</text>
+
+  <line x1="470" y1="75" x2="498" y2="75" stroke="#388bfd" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 4 -->
+  <rect x="500" y="44" width="130" height="62" rx="6" fill="#3a1a5c" stroke="#bc8cff" stroke-width="1.2"/>
+  <text x="565" y="64" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="700">HKDF-SHA3-512</text>
+  <text x="565" y="80" text-anchor="middle" fill="#c9d1d9" font-size="9.5">KEM-ss ‖ Argon2-out</text>
+  <text x="565" y="95" text-anchor="middle" fill="#8b949e" font-size="9">→ 32-byte session key</text>
+
+  <line x1="630" y1="75" x2="658" y2="75" stroke="#388bfd" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Step 5 -->
+  <rect x="660" y="44" width="180" height="62" rx="6" fill="#1a3a1a" stroke="#3fb950" stroke-width="1.2"/>
+  <text x="750" y="64" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">AES-256-GCM</text>
+  <text x="750" y="80" text-anchor="middle" fill="#c9d1d9" font-size="9.5">96-bit nonce · 128-bit tag</text>
+  <text x="750" y="95" text-anchor="middle" fill="#56d364" font-size="9">Quantum-safe ciphertext</text>
+
+  <!-- Bottom legend -->
+  <rect x="20" y="130" width="200" height="20" rx="4" fill="#1f6feb" opacity="0.12" stroke="#1f6feb" stroke-width="0.6"/>
+  <text x="120" y="144" text-anchor="middle" fill="#79c0ff" font-size="9.5">Classical: HKDF · AES-GCM · SHA3</text>
+
+  <rect x="240" y="130" width="200" height="20" rx="4" fill="#bc8cff" opacity="0.12" stroke="#bc8cff" stroke-width="0.6"/>
+  <text x="340" y="144" text-anchor="middle" fill="#d2a8ff" font-size="9.5">Post-Quantum: ML-KEM-1024 (FIPS 203)</text>
+
+  <rect x="460" y="130" width="200" height="20" rx="4" fill="#3fb950" opacity="0.12" stroke="#3fb950" stroke-width="0.6"/>
+  <text x="560" y="144" text-anchor="middle" fill="#56d364" font-size="9.5">Memory-Hard: Argon2id (RFC 9106)</text>
+
+  <rect x="680" y="130" width="160" height="20" rx="4" fill="#f85149" opacity="0.12" stroke="#f85149" stroke-width="0.6"/>
+  <text x="760" y="144" text-anchor="middle" fill="#ffa198" font-size="9.5">Threat-gated at every step</text>
+
+  <text x="430" y="178" text-anchor="middle" fill="#484f58" font-size="9">Compromising any single step does not break the chain — hardened by 3 independent primitives</text>
+  <text x="430" y="192" text-anchor="middle" fill="#484f58" font-size="9">Copyright (c) 2026 Soumodeep Guha (rock4007)</text>
+</svg>

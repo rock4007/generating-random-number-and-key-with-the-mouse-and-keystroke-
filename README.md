@@ -3,6 +3,15 @@
 **Behavioural Entropy Cryptographic Engine**  
 *Mouse dynamics · Keystroke timing · Post-quantum hybrid encryption · Zero-knowledge proofs · High-Voltage Vault*
 
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
+![KEM](https://img.shields.io/badge/KEM-ML--KEM--1024%20FIPS%20203-8957e5?style=flat-square)
+![Encryption](https://img.shields.io/badge/Encryption-AES--256--GCM-0075ca?style=flat-square)
+![KDF](https://img.shields.io/badge/KDF-Argon2id%20RFC%209106-0075ca?style=flat-square)
+![ZKP](https://img.shields.io/badge/ZKP-Schnorr%20%2F%20Fiat--Shamir-6e40c9?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-21%20passing-2ea44f?style=flat-square)
+![License](https://img.shields.io/badge/License-Proprietary%20%2F%20MIT-d29922?style=flat-square)
+![Visibility](https://img.shields.io/badge/Repo-Private-f85149?style=flat-square)
+
 ---
 
 > **Repository visibility: PRIVATE**  
@@ -49,6 +58,11 @@ Behavioural entropy is treated as **additional input**, not the sole root of tru
 
 ## Security Architecture
 
+![Architecture Diagram](docs/images/architecture.svg)
+
+<details>
+<summary>Text version (screen-reader / low-bandwidth)</summary>
+
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                          INPUT LAYER                                   │
@@ -90,6 +104,8 @@ Behavioural entropy is treated as **additional input**, not the sole root of tru
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
 ---
 
 ## Cryptographic Stack
@@ -106,6 +122,10 @@ Behavioural entropy is treated as **additional input**, not the sole root of tru
 | Secret sharing | Shamir SSS over GF(2⁸) | — | AES field poly 0x11B · Lagrange interpolation |
 | Wire integrity | HMAC-SHA3-512 | FIPS 198 | 64-byte envelope MAC |
 | Shard encryption | Argon2id + AES-256-GCM | — | Per-shard unique salt |
+
+### Key Derivation Flow
+
+![Key Flow Diagram](docs/images/key_flow.svg)
 
 ---
 
@@ -287,6 +307,10 @@ curl -X POST http://localhost:8000/quantum/decrypt \
   -d '{"package": <package from step 2>, "dk_hex": "<dk from step 1>"}'
 ```
 
+#### High-Voltage Vault Lifecycle
+
+![Vault Diagram](docs/images/vault.svg)
+
 #### Example — High-Voltage Vault round-trip
 
 ```bash
@@ -322,6 +346,16 @@ python -m http.server 8080
 ```
 
 Features: live mouse-key generation, message encryption, one-minute scheduled file encryption, real-time key-stream monitoring, random number display.
+
+---
+
+## Screenshots
+
+| Dashboard | Terminal output |
+|-----------|----------------|
+| ![Dashboard](docs/images/screenshot_dashboard.png) | ![Terminal](docs/images/screenshot_terminal.png) |
+
+> **To add screenshots:** take a screenshot of `dashboard.html` and the CLI output, save them as `docs/images/screenshot_dashboard.png` and `docs/images/screenshot_terminal.png`, then `git add docs/images/ && git commit -m "Add screenshots"`.
 
 ---
 
