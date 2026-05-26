@@ -1,1 +1,0 @@
-- [x] Step 1: Add Sumit dedication, InsufficientEntropyError class, enhanced HKDF/domain comments.
