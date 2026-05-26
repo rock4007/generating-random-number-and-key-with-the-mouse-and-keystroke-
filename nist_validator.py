@@ -56,7 +56,10 @@ NIST_TEST_PURPOSES = {
 
 # Practical lower bound often used for broad SP 800-22 coverage.
 FULL_BATTERY_RECOMMENDED_BITS = 1_000_000
-DEFAULT_SEQUENCE_BITS = 50_000
+# Several SP 800-22 tests need long sequences. Keep the default at the
+# full-battery target instead of splitting a million-bit corpus into short
+# chunks that make tests fail even for OS-generated random bytes.
+DEFAULT_SEQUENCE_BITS = FULL_BATTERY_RECOMMENDED_BITS
 MIN_SEQUENCES_FOR_PROPORTION_MODE = 20
 
 

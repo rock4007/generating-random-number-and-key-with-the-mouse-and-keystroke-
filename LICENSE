@@ -1,21 +1,72 @@
+SUMIT KEY — Dual-License Agreement
+Copyright (c) 2026 Soumodeep Guha (rock4007). All rights reserved.
+
+===============================================================================
+PART A — PROPRIETARY COMPONENTS  (All Rights Reserved)
+===============================================================================
+
+The following files are PROPRIETARY AND CONFIDENTIAL:
+
+  vault.py              — High-Voltage Vault, Schnorr ZKP, MITM Shield,
+                          Shamir Secret Sharing, Advanced Threat Detector,
+                          Serverless Handler
+  crypto_tools.py       — Quantum-safe Hybrid Encryption Pipeline
+                          (ML-KEM-1024 + Argon2id + AES-256-GCM + HKDF-SHA3-512)
+  advanced_security.py  — Rotating Key Epoch System, Threat Decision Engine
+  threat_model.py       — Cryptographic Threat Model & Attack Surface Analysis
+  crypto_benchmark.py   — Cryptographic Benchmark Suite
+
+These files and their contents are the exclusive intellectual property of
+Soumodeep Guha ("the Author"). No licence — express or implied — is granted
+to any person to:
+
+  * copy, reproduce, or distribute the files or any portion thereof;
+  * create derivative works based on the files;
+  * sublicence, sell, rent, lease, or transfer the files;
+  * use the files or the algorithms they embody in any product, service,
+    or research publication without prior written permission from the Author.
+
+Requests for commercial licensing, academic use, or collaboration:
+  soumodeepguha22@gmail.com
+
+===============================================================================
+PART B — OPEN-SOURCE COMPONENTS  (MIT License)
+===============================================================================
+
+The following files are released under the MIT License:
+
+  entropy_engine.py   key_generator.py   capture.py
+  main.py             api.py             security.py
+  debug_pipeline.py   fallback_auth.py   nist_validator.py
+  run_nist_4000.py    test_sandbox.py    requirements.txt
+  README.md
+
 MIT License
 
-Copyright (c) 2026 rock4007
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+of the above open-source files and associated documentation, to deal in the
+files without restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicence, and/or sell copies,
+and to permit persons to whom the files are furnished to do so, subject to
+the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the files.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE FILES ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+OUT OF OR IN CONNECTION WITH THE FILES OR THE USE OR OTHER DEALINGS IN THE
+FILES.
+
+===============================================================================
+IMPORTANT — Repository Visibility
+===============================================================================
+
+This repository MUST remain PRIVATE on GitHub.
+Making it public without removing all Proprietary Components constitutes
+a breach of this licence.
+
+To set private: GitHub -> Settings -> Danger Zone -> Change repository visibility

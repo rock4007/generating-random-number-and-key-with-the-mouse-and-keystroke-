@@ -13,11 +13,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any, Callable
 
 from entropy_engine import extract_keystroke_entropy, extract_mouse_entropy, pool_entropy
-from key_generator import KeyGenerator
+from key_generator import HKDFConfig, KeyGenerator
 from nist_validator import run_nist_tests
 
 
@@ -66,9 +67,15 @@ def generate_random_number_and_key(
     combined_entropy = pool_entropy(mouse_entropy, keystroke_entropy)
 
     if security_level == "quantum":
-        key_bytes = KeyGenerator.generate_quantum_hardened_key(combined_entropy)
+        key_bytes = KeyGenerator.generate_fresh_quantum_hardened_key(
+            combined_entropy,
+            personalization=b"single-generation",
+        )
     elif security_level == "standard":
-        key_bytes = KeyGenerator.generate_key(combined_entropy)
+        key_bytes = KeyGenerator.generate_fresh_key(
+            combined_entropy,
+            personalization=b"single-generation",
+        )
     else:
         raise ValueError("security_level must be 'standard' or 'quantum'")
 
@@ -120,7 +127,12 @@ def _expand_entropy_for_batch(base_entropy: bytes, experiment_tag: str, index: i
     return left + right
 
 
-def _generate_key_batch(base_entropy: bytes, experiment_tag: str, num_keys: int) -> list[bytes]:
+def _generate_key_batch(
+    base_entropy: bytes,
+    experiment_tag: str,
+    num_keys: int,
+    security_level: str = "standard",
+) -> list[bytes]:
     """Generate a batch of keys from one entropy source configuration.
 
     Why this matters cryptographically:
@@ -132,14 +144,29 @@ def _generate_key_batch(base_entropy: bytes, experiment_tag: str, num_keys: int)
         raise ValueError("num_keys must be a positive integer")
 
     keys: list[bytes] = []
-    # SHAKE256 acts as an extensible-output PRF here, keyed by entropy and
-    # domain-separated by experiment tag + index. This avoids structural
-    # artifacts from repeatedly reusing closely-related HKDF inputs.
-    output_len = 32
-    prefix = hashlib.sha3_256(experiment_tag.encode("utf-8") + b"|SUMIT_KEY_BATCH|" + base_entropy).digest()
+    if security_level == "quantum":
+        config = HKDFConfig.quantum_hardened()
+    elif security_level == "standard":
+        config = HKDFConfig()
+    else:
+        raise ValueError("security_level must be 'standard' or 'quantum'")
+
+    prefix = hashlib.sha3_256(
+        experiment_tag.encode("utf-8") + b"|SUMIT_KEY_BATCH|" + base_entropy
+    ).digest()
     for index in range(num_keys):
-        stream_input = prefix + index.to_bytes(8, "big") + base_entropy
-        key = hashlib.shake_256(stream_input).digest(output_len)
+        personalization = (
+            experiment_tag.encode("utf-8")
+            + b"|"
+            + index.to_bytes(8, "big")
+        )
+        behaviour = hashlib.sha3_256(prefix + personalization + base_entropy).digest()
+        key = KeyGenerator.generate_fresh_key(
+            behaviour,
+            config=config,
+            system_random_bytes=os.urandom(config.min_entropy_bytes),
+            personalization=personalization,
+        )
         keys.append(key)
 
     return keys
@@ -183,9 +210,15 @@ def generate_per_mouse_movement_outputs(
         combined_entropy = pool_entropy(mouse_entropy, keystroke_entropy)
 
         if security_level == "quantum":
-            key_bytes = KeyGenerator.generate_quantum_hardened_key(combined_entropy)
+            key_bytes = KeyGenerator.generate_fresh_quantum_hardened_key(
+                combined_entropy,
+                personalization=f"per-move:{idx}".encode("utf-8"),
+            )
         elif security_level == "standard":
-            key_bytes = KeyGenerator.generate_key(combined_entropy)
+            key_bytes = KeyGenerator.generate_fresh_key(
+                combined_entropy,
+                personalization=f"per-move:{idx}".encode("utf-8"),
+            )
         else:
             raise ValueError("security_level must be 'standard' or 'quantum'")
 
@@ -278,17 +311,32 @@ def run_all_experiments(
     combined_entropy = pool_entropy(mouse_entropy, keystroke_entropy)
 
     print(f"Generating {num_keys} keys for Experiment A (Mouse only)...")
-    keys_a = _generate_key_batch(mouse_entropy, "EXPERIMENT_A_MOUSE_ONLY", num_keys)
+    keys_a = _generate_key_batch(
+        mouse_entropy,
+        "EXPERIMENT_A_MOUSE_ONLY",
+        num_keys,
+        security_level,
+    )
     print("Running NIST tests for Experiment A...")
     results_a = run_nist_tests(keys_a)
 
     print(f"Generating {num_keys} keys for Experiment B (Keystroke only)...")
-    keys_b = _generate_key_batch(keystroke_entropy, "EXPERIMENT_B_KEYSTROKE_ONLY", num_keys)
+    keys_b = _generate_key_batch(
+        keystroke_entropy,
+        "EXPERIMENT_B_KEYSTROKE_ONLY",
+        num_keys,
+        security_level,
+    )
     print("Running NIST tests for Experiment B...")
     results_b = run_nist_tests(keys_b)
 
     print(f"Generating {num_keys} keys for Experiment C (Mouse + Keystroke)...")
-    keys_c = _generate_key_batch(combined_entropy, "EXPERIMENT_C_COMBINED", num_keys)
+    keys_c = _generate_key_batch(
+        combined_entropy,
+        "EXPERIMENT_C_COMBINED",
+        num_keys,
+        security_level,
+    )
     print("Running NIST tests for Experiment C...")
     results_c = run_nist_tests(keys_c)
 

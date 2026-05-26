@@ -12,11 +12,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import hmac
+import os
 from typing import Iterable
 
 
 class InsufficientEntropyError(Exception):
     """Raised when the provided entropy is below the 32-byte minimum."""
+
+
+class EntropyHealthError(Exception):
+    """Raised when entropy input fails basic health checks."""
 
 
 @dataclass(frozen=True)
@@ -33,6 +38,7 @@ class HKDFConfig:
     salt: bytes = b"SUMIT_KEY_v1"
     info: bytes = b"behavioural_entropy_key"
     length: int = 32
+    min_entropy_bytes: int = 32
 
     @classmethod
     def quantum_hardened(cls) -> "HKDFConfig":
@@ -47,6 +53,7 @@ class HKDFConfig:
             salt=b"SUMIT_KEY_v2_QUANTUM",
             info=b"behavioural_entropy_key_quantum_hardened",
             length=64,
+            min_entropy_bytes=32,
         )
 
 
@@ -173,6 +180,113 @@ class KeyGenerator:
         return cls.hkdf_expand(prk=prk, info=config.info, length=config.length)
 
     @classmethod
+    def _length_prefix(cls, payload: bytes | bytearray) -> bytes:
+        """Encode bytes with an 8-byte length prefix for unambiguous mixing."""
+
+        normalized = bytes(payload)
+        return len(normalized).to_bytes(8, "big") + normalized
+
+    @classmethod
+    def health_check_entropy(
+        cls,
+        entropy_bytes: bytes | bytearray,
+        *,
+        min_bytes: int = 32,
+        max_repetition_run: int = 24,
+        max_byte_frequency_ratio: float = 0.85,
+    ) -> None:
+        """Apply lightweight input health checks inspired by NIST SP 800-90B.
+
+        These checks are not a replacement for a formal entropy-source
+        validation. They reject obviously broken inputs before key derivation:
+        too little data, all-zero/all-same streams, long repeated-byte runs, and
+        streams dominated by a single byte value.
+        """
+
+        if not isinstance(entropy_bytes, (bytes, bytearray)):
+            raise TypeError("entropy_bytes must be bytes-like")
+        if min_bytes <= 0:
+            raise ValueError("min_bytes must be positive")
+
+        data = bytes(entropy_bytes)
+        if len(data) < min_bytes:
+            raise InsufficientEntropyError(
+                f"Need at least {min_bytes} bytes of entropy input; got {len(data)}"
+            )
+        if len(set(data)) < 2:
+            raise EntropyHealthError("entropy input must not be constant")
+
+        longest_run = 1
+        current_run = 1
+        for previous, current in zip(data, data[1:]):
+            if current == previous:
+                current_run += 1
+                longest_run = max(longest_run, current_run)
+            else:
+                current_run = 1
+        if longest_run > max_repetition_run:
+            raise EntropyHealthError(
+                f"entropy input has a repeated-byte run of {longest_run}, "
+                f"limit is {max_repetition_run}"
+            )
+
+        most_common = max(data.count(value) for value in set(data))
+        if most_common / len(data) > max_byte_frequency_ratio:
+            raise EntropyHealthError("entropy input is dominated by one byte value")
+
+    @classmethod
+    def generate_fresh_key(
+        cls,
+        behavioural_entropy: bytes | bytearray,
+        config: HKDFConfig | None = None,
+        *,
+        system_random_bytes: bytes | bytearray | None = None,
+        personalization: bytes | bytearray = b"",
+    ) -> bytes:
+        """Generate key material from behavioural entropy plus OS CSPRNG bytes.
+
+        This is the recommended production-facing path. The behavioural signal
+        is used as additional input, while fresh system randomness prevents
+        repeat keys if a capture is weak or replayed. Python obtains these bytes
+        from the operating-system CSPRNG via ``os.urandom``.
+        """
+
+        active_config = config if config is not None else HKDFConfig()
+        if not isinstance(active_config, HKDFConfig):
+            raise TypeError("config must be an HKDFConfig instance")
+        if not isinstance(personalization, (bytes, bytearray)):
+            raise TypeError("personalization must be bytes-like")
+
+        behavioural = bytes(behavioural_entropy)
+        cls.health_check_entropy(
+            behavioural,
+            min_bytes=active_config.min_entropy_bytes,
+            max_repetition_run=active_config.min_entropy_bytes,
+        )
+
+        if system_random_bytes is None:
+            system_random = os.urandom(active_config.min_entropy_bytes)
+        else:
+            if not isinstance(system_random_bytes, (bytes, bytearray)):
+                raise TypeError("system_random_bytes must be bytes-like")
+            system_random = bytes(system_random_bytes)
+            cls.health_check_entropy(
+                system_random,
+                min_bytes=active_config.min_entropy_bytes,
+                max_repetition_run=active_config.min_entropy_bytes,
+            )
+
+        ikm = b"".join(
+            [
+                b"SUMIT_KEY_FRESH_V1",
+                cls._length_prefix(behavioural),
+                cls._length_prefix(system_random),
+                cls._length_prefix(personalization),
+            ]
+        )
+        return cls.derive_key([ikm], active_config)
+
+    @classmethod
     def derive_key_hex(
         cls,
         entropy_chunks: Iterable[bytes | bytearray],
@@ -212,6 +326,23 @@ class KeyGenerator:
 
         active_config = config if config is not None else HKDFConfig()
         return cls.derive_key([normalized], active_config)
+
+    @classmethod
+    def generate_fresh_quantum_hardened_key(
+        cls,
+        behavioural_entropy: bytes | bytearray,
+        *,
+        system_random_bytes: bytes | bytearray | None = None,
+        personalization: bytes | bytearray = b"",
+    ) -> bytes:
+        """Generate one fresh 512-bit key from behaviour plus OS randomness."""
+
+        return cls.generate_fresh_key(
+            behavioural_entropy,
+            HKDFConfig.quantum_hardened(),
+            system_random_bytes=system_random_bytes,
+            personalization=personalization,
+        )
 
     @classmethod
     def generate_quantum_hardened_key(cls, entropy_bytes: bytes | bytearray) -> bytes:

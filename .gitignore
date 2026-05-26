@@ -1,3 +1,27 @@
 __pycache__/
 *.pyc
+*.pyo
 .venv/
+venv/
+
+# Secrets and credentials — NEVER commit these
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials.json
+service_account.json
+
+# Generated binary key material
+results/*.bin
+results/*.key
+
+# IDE and OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

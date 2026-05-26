@@ -30,6 +30,8 @@ The project is designed for experimentation and validation, not production deplo
 - mouse and keyboard behavioural entropy capture
 - SHA3-based entropy extraction and pooling
 - standard and quantum-hardened HKDF key derivation
+- fresh key generation that mixes behavioural entropy with OS CSPRNG bytes
+- basic SP 800-90B-inspired entropy health checks for broken input detection
 - per-move generation with one binary output per movement
 - batch experiment mode with NIST SP 800-22 validation
 
@@ -86,6 +88,35 @@ python main.py --mode per-move
 
 This mode writes detailed records to `results/per_move_generation.json`.
 
+### Static mouse-turn encryption chain
+
+Generate a repeatable static key from a few mouse turns plus micro-vibration, then encrypt a message with AES-256-GCM:
+
+```bash
+python debug_pipeline.py --static-chain
+```
+
+For live capture:
+
+```bash
+python debug_pipeline.py --static-chain-live 5
+```
+
+### Game fallback authentication scenarios
+
+Test chess/game-like mouse movement quality first, then fall back to phone/email OTP, then phone NFC:
+
+```bash
+python crypto_benchmark.py --quick
+```
+
+The benchmark includes four sandbox scenarios:
+
+- good chess movement passes directly
+- weak movement passes with OTP backup
+- bad movement and bad OTP pass with NFC backup
+- bad movement, bad OTP, and bad NFC deny access
+
 ### NIST experiment mode
 
 Generate a batch of keys and run statistical validation:
@@ -104,6 +135,16 @@ Run a short interactive capture demo:
 python demo.py
 ```
 
+### Digital dashboard
+
+Open the local dashboard for live mouse-key generation, message encryption, one-minute file encryption scheduling, random numbers, and key-stream monitoring:
+
+```bash
+python -m http.server 8080
+```
+
+Then open `http://127.0.0.1:8080/dashboard.html`.
+
 ## Testing
 
 Validate the entropy pipeline with synthetic data:
@@ -113,6 +154,14 @@ python test_sandbox.py
 ```
 
 This test harness checks mouse entropy extraction, keystroke entropy extraction, entropy pooling, key derivation, and deterministic output behavior without requiring GUI input.
+
+Run black-box security checks:
+
+```bash
+python test_blackbox_security.py
+```
+
+This validates fresh-key uniqueness, deterministic test injection, avalanche behavior, health-check rejection, quantum output length, and AES-GCM authentication when `cryptography` is installed.
 
 ## Outputs
 
@@ -124,6 +173,7 @@ This test harness checks mouse entropy extraction, keystroke entropy extraction,
 ## Project Layout
 
 - `main.py` — generation and experiment runner
+- `dashboard.html` — browser dashboard for message/file encryption and live key stream
 - `demo.py` — interactive behavioural capture demo
 - `capture.py` — mouse and keyboard capture logic
 - `entropy_engine.py` — entropy feature extraction and pooling
@@ -136,7 +186,11 @@ This test harness checks mouse entropy extraction, keystroke entropy extraction,
 
 - This repository is for research and proof-of-concept usage.
 - Behavioural entropy is non-deterministic and depends on live input.
-- NIST tests assess randomness characteristics; they do not guarantee cryptographic certification.
+- Production-facing key generation mixes mouse/keystroke entropy with fresh operating-system CSPRNG bytes. Behavioural entropy is treated as additional input, not the sole root of trust.
+- Static-chain mode is repeatable by design: the same captured movement features can reproduce the same key. Use it for demos, local encryption workflows, or research; use fresh mode when replay resistance matters.
+- Phone/email OTP and NFC fallback code is sandbox simulation. Production OTP needs provider integration, replay prevention, rate limits, and short expiry. Production NFC should use phishing-resistant FIDO2/WebAuthn or smart-card semantics.
+- NIST SP 800-22 tests assess statistical characteristics; they do not guarantee cryptographic certification.
+- The health checks are inspired by NIST SP 800-90B concepts, but this project is not a formal NIST entropy-source validation or a FIPS 140 validated cryptographic module.
 
 ## License
 

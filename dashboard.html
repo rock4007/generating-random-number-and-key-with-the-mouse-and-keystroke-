@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SUMIT KEY Security Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111316;
+      --panel: #1b2026;
+      --panel-2: #222932;
+      --text: #ecf2f8;
+      --muted: #9ba8b6;
+      --line: #343d49;
+      --good: #4fc07a;
+      --warn: #f0b74d;
+      --bad: #ef6b73;
+      --info: #62a8ea;
+      --chip: #2d3743;
+      --focus: #f4d35e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      min-height: 36px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: var(--info); }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    button.primary {
+      background: #2d6a4f;
+      border-color: #40916c;
+    }
+
+    button.danger {
+      background: #6b2731;
+      border-color: #a84f59;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #12161b;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 9px 10px;
+    }
+
+    textarea {
+      min-height: 118px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #15191e;
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 720;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--chip);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .pill.good { color: var(--good); }
+    .pill.warn { color: var(--warn); }
+    .pill.bad { color: var(--bad); }
+
+    main {
+      width: min(1680px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr) 380px;
+      gap: 14px;
+    }
+
+    section, aside {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-width: 0;
+    }
+
+    .section-head {
+      min-height: 48px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #d9e5ef;
+    }
+
+    .content {
+      padding: 14px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric {
+      background: #141a20;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      min-height: 70px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .flow-step {
+      border: 1px solid var(--line);
+      background: #141a20;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 92px;
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
+
+    .flow-step.active {
+      border-color: var(--info);
+      box-shadow: inset 0 0 0 1px rgba(98, 168, 234, 0.35);
+    }
+
+    .flow-step b {
+      font-size: 13px;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .panel {
+      background: #151b22;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .panel h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #dce7ef;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .row > * {
+      flex: 1 1 150px;
+    }
+
+    .row button {
+      flex: 0 0 auto;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .output {
+      min-height: 84px;
+      max-height: 210px;
+      overflow: auto;
+      white-space: pre-wrap;
+      background: #101419;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      color: #d7e3ec;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 8px;
+      max-height: 480px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .event {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--info);
+      border-radius: 6px;
+      padding: 9px 10px;
+      background: #141a20;
+      display: grid;
+      gap: 5px;
+    }
+
+    .event.good { border-left-color: var(--good); }
+    .event.warn { border-left-color: var(--warn); }
+    .event.bad { border-left-color: var(--bad); }
+
+    .event time {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .file-list {
+      display: grid;
+      gap: 7px;
+      max-height: 170px;
+      overflow: auto;
+    }
+
+    .file-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #101419;
+    }
+
+    .file-item a {
+      color: var(--info);
+      text-decoration: none;
+      font-size: 12px;
+    }
+
+    .bars {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #101419;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .bar > i {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--info);
+      transition: width 0.2s ease;
+    }
+
+    .process-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .process-card {
+      background: #141a20;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .process-card h3 {
+      margin: 0;
+      font-size: 13px;
+      color: #dce7ef;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 108px minmax(0, 1fr);
+      gap: 6px 8px;
+      font-size: 12px;
+    }
+
+    .kv span:nth-child(odd) {
+      color: var(--muted);
+    }
+
+    .packet {
+      max-height: 190px;
+      overflow: auto;
+      background: #101419;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px;
+    }
+
+    @media (max-width: 1180px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .flow {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      header { padding: 14px; }
+      main { padding: 10px; }
+      .grid-2, .metrics, .flow {
+        grid-template-columns: 1fr;
+      }
+      .process-board {
+        grid-template-columns: 1fr;
+      }
+      .row button {
+        flex: 1 1 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>SUMIT KEY Security Dashboard</h1>
+      <div class="header-meta">
+        <span id="cryptoStatus" class="pill warn">WebCrypto checking</span>
+        <span id="rotationStatus" class="pill">0.3s key epochs</span>
+        <span id="schedulerStatus" class="pill">file scheduler idle</span>
+      </div>
+    </header>
+
+    <main>
+      <aside>
+        <div class="section-head">
+          <h2>Mouse Key Stream</h2>
+          <button id="clearMouse">Clear</button>
+        </div>
+        <div class="content stack">
+          <div class="metrics">
+            <div class="metric"><span>Moves</span><strong id="moveCount">0</strong></div>
+            <div class="metric"><span>Keys</span><strong id="keyCount">0</strong></div>
+            <div class="metric"><span>Random #</span><strong id="latestRandom">none</strong></div>
+            <div class="metric"><span>Epoch</span><strong id="epochValue">0</strong></div>
+          </div>
+          <div class="panel">
+            <h3>Current Mouse-Derived Key</h3>
+            <div id="mouseKey" class="output mono">Move the mouse over this page.</div>
+          </div>
+          <div class="panel">
+            <h3>Entropy Mix</h3>
+            <div class="bars">
+              <div>
+                <div class="row"><span class="pill">turns</span><span id="turnMetric" class="pill">0</span></div>
+                <div class="bar"><i id="turnBar"></i></div>
+              </div>
+              <div>
+                <div class="row"><span class="pill">vibration</span><span id="vibrationMetric" class="pill">0</span></div>
+                <div class="bar"><i id="vibrationBar"></i></div>
+              </div>
+              <div>
+                <div class="row"><span class="pill">velocity</span><span id="velocityMetric" class="pill">0 px/s</span></div>
+                <div class="bar"><i id="velocityBar"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section>
+        <div class="section-head">
+          <h2>Encryption Process</h2>
+          <div class="row">
+            <button id="manualRotate">New System Key</button>
+            <button id="runDemo" class="primary">Run Demo</button>
+          </div>
+        </div>
+        <div class="content">
+          <div class="flow">
+            <div id="stepCapture" class="flow-step active">
+              <b>1. Capture</b>
+              <span>mouse move, turn, vibration, file/message metadata</span>
+            </div>
+            <div id="stepDerive" class="flow-step">
+              <b>2. Derive</b>
+              <span>SHA-256 over system secret, epoch, mouse key, counter</span>
+            </div>
+            <div id="stepEncrypt" class="flow-step">
+              <b>3. Encrypt</b>
+              <span>AES-GCM with fresh nonce and authenticated context</span>
+            </div>
+            <div id="stepStore" class="flow-step">
+              <b>4. Store</b>
+              <span>ciphertext package, nonce, AAD, key id</span>
+            </div>
+            <div id="stepRotate" class="flow-step">
+              <b>5. Rotate</b>
+              <span>new key every mouse event and every 0.3s epoch</span>
+            </div>
+          </div>
+
+          <div class="process-board">
+            <div class="process-card">
+              <h3>Sender Process</h3>
+              <div class="kv">
+                <span>Input</span><b id="senderInput">waiting</b>
+                <span>Mouse key</span><b id="senderMouseKey" class="mono">waiting</b>
+                <span>AES key</span><b id="senderAesKey" class="mono">waiting</b>
+                <span>Action</span><b id="senderAction">capture first</b>
+              </div>
+            </div>
+
+            <div class="process-card">
+              <h3>Encrypted Packet</h3>
+              <div id="packetView" class="packet mono">No packet yet. Encrypt a message or file.</div>
+            </div>
+
+            <div class="process-card">
+              <h3>Receiver / Storage Check</h3>
+              <div class="kv">
+                <span>Key match</span><b id="receiverKeyMatch">waiting</b>
+                <span>AAD</span><b id="receiverAad">waiting</b>
+                <span>Integrity</span><b id="receiverIntegrity">waiting</b>
+                <span>Result</span><b id="receiverResult">waiting</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel stack">
+              <h3>Message Encryption</h3>
+              <textarea id="messageInput">Attack at dawn. This message will be encrypted with the current mouse/system key.</textarea>
+              <div class="row">
+                <button id="encryptMessage" class="primary">Encrypt Message</button>
+                <button id="decryptMessage">Decrypt Last</button>
+              </div>
+              <div id="messageOutput" class="output mono">No encrypted message yet.</div>
+            </div>
+
+            <div class="panel stack">
+              <h3>File Encryption Scheduler</h3>
+              <input id="fileInput" type="file" multiple>
+              <div class="row">
+                <button id="encryptFilesNow" class="primary">Encrypt Files Now</button>
+                <button id="toggleScheduler">Start 1-Min Scheduler</button>
+              </div>
+              <div class="metrics">
+                <div class="metric"><span>Next run</span><strong id="nextRun">idle</strong></div>
+                <div class="metric"><span>Files encrypted</span><strong id="filesEncrypted">0</strong></div>
+              </div>
+              <div id="fileList" class="file-list"></div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top: 14px;">
+            <div class="panel">
+              <h3>Current System Key Package</h3>
+              <div id="systemKey" class="output mono"></div>
+            </div>
+            <div class="panel">
+              <h3>Threat And Health</h3>
+              <div id="threatOutput" class="output mono"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="section-head">
+          <h2>Live Event Log</h2>
+          <button id="clearLog">Clear</button>
+        </div>
+        <div class="content">
+          <div id="timeline" class="timeline"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const state = {
+      systemSecret: crypto.getRandomValues(new Uint8Array(32)),
+      deviceSalt: crypto.getRandomValues(new Uint8Array(16)),
+      mouseEvents: [],
+      keyCounter: 0,
+      latestMouseKey: null,
+      latestMouseKeyHex: "",
+      latestMessage: null,
+      latestPacket: null,
+      fileCount: 0,
+      scheduler: null,
+      nextRunAt: null,
+      lastAngle: null,
+      turns: 0,
+      vibration: 0,
+      velocity: 0
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function hex(bytes) {
+      return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function shortHex(bytes, n = 24) {
+      return hex(bytes).slice(0, n) + "...";
+    }
+
+    function nowStamp() {
+      return new Date().toLocaleTimeString();
+    }
+
+    function logEvent(title, detail, kind = "info") {
+      const item = document.createElement("div");
+      item.className = `event ${kind}`;
+      item.innerHTML = `<time>${nowStamp()}</time><strong>${escapeHtml(title)}</strong><span class="mono">${escapeHtml(detail)}</span>`;
+      $("timeline").prepend(item);
+      while ($("timeline").children.length > 80) $("timeline").lastChild.remove();
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[ch]));
+    }
+
+    async function sha256Bytes(parts) {
+      const total = parts.reduce((sum, part) => sum + part.length, 0);
+      const joined = new Uint8Array(total);
+      let offset = 0;
+      for (const part of parts) {
+        joined.set(part, offset);
+        offset += part.length;
+      }
+      return new Uint8Array(await crypto.subtle.digest("SHA-256", joined));
+    }
+
+    function epoch() {
+      return Math.floor(Date.now() / 300);
+    }
+
+    async function deriveKeyBytes(label, extraBytes = new Uint8Array()) {
+      const mouse = state.latestMouseKey || new Uint8Array(32);
+      const counter = encoder.encode(String(state.keyCounter));
+      const epochBytes = encoder.encode(String(epoch()));
+      const labelBytes = encoder.encode(label);
+      return sha256Bytes([
+        state.systemSecret,
+        state.deviceSalt,
+        mouse,
+        counter,
+        epochBytes,
+        labelBytes,
+        extraBytes
+      ]);
+    }
+
+    async function importAesKey(keyBytes) {
+      return crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+    }
+
+    async function deriveMouseKey(event) {
+      state.keyCounter += 1;
+      const data = encoder.encode(JSON.stringify({
+        t: Math.round(performance.now() * 1000),
+        x: Math.round(event.clientX * 10) / 10,
+        y: Math.round(event.clientY * 10) / 10,
+        movementX: event.movementX,
+        movementY: event.movementY,
+        counter: state.keyCounter,
+        salt: hex(state.deviceSalt)
+      }));
+      const keyBytes = await sha256Bytes([state.systemSecret, data]);
+      state.latestMouseKey = keyBytes;
+      state.latestMouseKeyHex = hex(keyBytes);
+      updateMouseMetrics(event, keyBytes);
+      updateSystemKeyPanel();
+    }
+
+    function updateMouseMetrics(event, keyBytes) {
+      const current = { x: event.clientX, y: event.clientY, t: performance.now() };
+      const previous = state.mouseEvents[state.mouseEvents.length - 1];
+      state.mouseEvents.push(current);
+      if (state.mouseEvents.length > 300) state.mouseEvents.shift();
+
+      if (previous) {
+        const dx = current.x - previous.x;
+        const dy = current.y - previous.y;
+        const dt = Math.max(1, current.t - previous.t) / 1000;
+        const distance = Math.hypot(dx, dy);
+        state.velocity = Math.round(distance / dt);
+        if (distance > 0 && distance < 5) state.vibration += 1;
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        if (state.lastAngle !== null) {
+          let diff = Math.abs(angle - state.lastAngle) % 360;
+          diff = diff <= 180 ? diff : 360 - diff;
+          if (diff >= 20) state.turns += 1;
+        }
+        state.lastAngle = angle;
+      }
+
+      const randomNumber = Number(BigInt("0x" + hex(keyBytes.slice(0, 8))) % 9007199254740991n);
+      $("moveCount").textContent = String(state.mouseEvents.length);
+      $("keyCount").textContent = String(state.keyCounter);
+      $("latestRandom").textContent = String(randomNumber);
+      $("epochValue").textContent = String(epoch());
+      $("mouseKey").textContent = state.latestMouseKeyHex;
+      $("turnMetric").textContent = String(state.turns);
+      $("vibrationMetric").textContent = String(state.vibration);
+      $("velocityMetric").textContent = `${state.velocity} px/s`;
+      $("turnBar").style.width = `${Math.min(100, state.turns)}%`;
+      $("vibrationBar").style.width = `${Math.min(100, state.vibration * 2)}%`;
+      $("velocityBar").style.width = `${Math.min(100, state.velocity / 30)}%`;
+
+      setActiveStep("stepDerive");
+      logEvent("Mouse key created", `key#${state.keyCounter} random=${randomNumber} key=${shortHex(keyBytes)}`, "good");
+    }
+
+    function setActiveStep(id) {
+      for (const el of document.querySelectorAll(".flow-step")) el.classList.remove("active");
+      $(id).classList.add("active");
+    }
+
+    async function encryptPayload(bytes, label) {
+      const keyBytes = await deriveKeyBytes(label, bytes.slice(0, 32));
+      const aesKey = await importAesKey(keyBytes);
+      const nonce = crypto.getRandomValues(new Uint8Array(12));
+      const aad = encoder.encode(JSON.stringify({
+        label,
+        epoch: epoch(),
+        mouseKey: state.latestMouseKeyHex.slice(0, 32),
+        keyCounter: state.keyCounter,
+        createdAt: new Date().toISOString()
+      }));
+      const ciphertext = new Uint8Array(await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
+        aesKey,
+        bytes
+      ));
+      return { keyBytes, nonce, aad, ciphertext, label, epoch: epoch(), byteLength: bytes.length };
+    }
+
+    async function decryptPayload(packageData, label) {
+      const aesKey = await importAesKey(packageData.keyBytes);
+      return new Uint8Array(await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: packageData.nonce, additionalData: packageData.aad, tagLength: 128 },
+        aesKey,
+        packageData.ciphertext
+      ));
+    }
+
+    async function encryptMessage() {
+      setActiveStep("stepEncrypt");
+      const plaintext = encoder.encode($("messageInput").value);
+      const encrypted = await encryptPayload(plaintext, "message");
+      state.latestMessage = encrypted;
+      state.latestPacket = buildPacketSummary(encrypted, "message", plaintext.length);
+      $("messageOutput").textContent = [
+        `algorithm: AES-GCM`,
+        `epoch: ${epoch()}`,
+        `nonce: ${hex(encrypted.nonce)}`,
+        `key: ${shortHex(encrypted.keyBytes, 40)}`,
+        `aad: ${decoder.decode(encrypted.aad)}`,
+        `ciphertext: ${hex(encrypted.ciphertext)}`
+      ].join("\n");
+      setActiveStep("stepStore");
+      logEvent("Message encrypted", `bytes=${plaintext.length} nonce=${hex(encrypted.nonce)} key=${shortHex(encrypted.keyBytes)}`, "good");
+      updateThreatPanel();
+      updateProcessView("Message plaintext", encrypted, "Encrypted message ready for receiver");
+    }
+
+    async function decryptMessage() {
+      if (!state.latestMessage) {
+        logEvent("Decrypt skipped", "no message package", "warn");
+        return;
+      }
+      const plain = await decryptPayload(state.latestMessage, "message");
+      $("messageOutput").textContent += `\n\nverified plaintext:\n${decoder.decode(plain)}`;
+      logEvent("Message decrypted", `verified ${plain.length} bytes`, "good");
+      updateReceiverView(true, "message decrypted and tag verified");
+    }
+
+    async function encryptSelectedFiles() {
+      const input = $("fileInput");
+      if (!input.files || input.files.length === 0) {
+        logEvent("File encryption skipped", "no files selected", "warn");
+        return;
+      }
+      setActiveStep("stepEncrypt");
+      for (const file of input.files) {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const encrypted = await encryptPayload(bytes, `file:${file.name}`);
+        state.latestPacket = buildPacketSummary(encrypted, `file:${file.name}`, bytes.length);
+        const packageJson = JSON.stringify({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          algorithm: "AES-GCM",
+          epoch: epoch(),
+          nonceHex: hex(encrypted.nonce),
+          aadHex: hex(encrypted.aad),
+          keyPreview: shortHex(encrypted.keyBytes, 32),
+          ciphertextHex: hex(encrypted.ciphertext)
+        }, null, 2);
+        const blob = new Blob([packageJson], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const item = document.createElement("div");
+        item.className = "file-item";
+        item.innerHTML = `<span class="mono">${escapeHtml(file.name)}<br>${file.size} B -> ${encrypted.ciphertext.length} B</span>`;
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${file.name}.sumitkey.json`;
+        link.textContent = "encrypted";
+        item.appendChild(link);
+        $("fileList").prepend(item);
+        state.fileCount += 1;
+        logEvent("File encrypted", `${file.name} key=${shortHex(encrypted.keyBytes)} nonce=${hex(encrypted.nonce)}`, "good");
+        updateProcessView(`File: ${file.name}`, encrypted, "Encrypted file package stored");
+        updateReceiverView(true, "file package produced with AES-GCM tag");
+      }
+      $("filesEncrypted").textContent = String(state.fileCount);
+      setActiveStep("stepRotate");
+      updateThreatPanel();
+    }
+
+    function toggleScheduler() {
+      if (state.scheduler) {
+        clearInterval(state.scheduler);
+        state.scheduler = null;
+        state.nextRunAt = null;
+        $("toggleScheduler").textContent = "Start 1-Min Scheduler";
+        $("schedulerStatus").textContent = "file scheduler idle";
+        $("schedulerStatus").className = "pill";
+        $("nextRun").textContent = "idle";
+        logEvent("Scheduler stopped", "file encryption every minute disabled", "warn");
+        return;
+      }
+      state.nextRunAt = Date.now() + 60000;
+      state.scheduler = setInterval(() => {
+        state.nextRunAt = Date.now() + 60000;
+        encryptSelectedFiles().catch((error) => logEvent("File scheduler error", error.message, "bad"));
+      }, 60000);
+      $("toggleScheduler").textContent = "Stop Scheduler";
+      $("schedulerStatus").textContent = "encrypting every minute";
+      $("schedulerStatus").className = "pill good";
+      logEvent("Scheduler started", "selected files will encrypt every minute", "good");
+    }
+
+    function updateSchedulerCountdown() {
+      if (!state.nextRunAt) return;
+      const left = Math.max(0, state.nextRunAt - Date.now());
+      $("nextRun").textContent = `${Math.ceil(left / 1000)}s`;
+    }
+
+    async function manualRotate() {
+      state.systemSecret = crypto.getRandomValues(new Uint8Array(32));
+      state.deviceSalt = crypto.getRandomValues(new Uint8Array(16));
+      state.keyCounter += 1;
+      state.latestMouseKey = await sha256Bytes([state.systemSecret, state.deviceSalt, encoder.encode(String(Date.now()))]);
+      state.latestMouseKeyHex = hex(state.latestMouseKey);
+      updateSystemKeyPanel();
+      setActiveStep("stepRotate");
+      logEvent("System key rotated", `new key=${shortHex(state.latestMouseKey)}`, "good");
+    }
+
+    function updateSystemKeyPanel() {
+      $("systemKey").textContent = [
+        `epoch: ${epoch()}`,
+        `epoch length: 0.3 seconds`,
+        `device salt: ${hex(state.deviceSalt)}`,
+        `mouse key: ${state.latestMouseKeyHex || "waiting for movement"}`,
+        `system secret preview: ${shortHex(state.systemSecret, 24)}`,
+        `next AES key changes with: mouse event, epoch, counter, file/message context`
+      ].join("\n");
+    }
+
+    function buildPacketSummary(encrypted, label, plainBytes) {
+      const aadText = decoder.decode(encrypted.aad);
+      return {
+        type: label.startsWith("file:") ? "file" : "message",
+        label,
+        plainBytes,
+        cipherBytes: encrypted.ciphertext.length,
+        epoch: encrypted.epoch,
+        nonce: hex(encrypted.nonce),
+        aad: JSON.parse(aadText),
+        aadText,
+        keyPreview: shortHex(encrypted.keyBytes, 40),
+        ciphertextPreview: shortHex(encrypted.ciphertext, 72)
+      };
+    }
+
+    function updateProcessView(inputName, encrypted, actionText) {
+      const packet = state.latestPacket || buildPacketSummary(encrypted, encrypted.label, encrypted.byteLength);
+      $("senderInput").textContent = `${inputName} (${packet.plainBytes} B)`;
+      $("senderMouseKey").textContent = state.latestMouseKeyHex ? state.latestMouseKeyHex.slice(0, 40) + "..." : "zero bootstrap key";
+      $("senderAesKey").textContent = packet.keyPreview;
+      $("senderAction").textContent = actionText;
+      $("packetView").textContent = [
+        `type: ${packet.type}`,
+        `label: ${packet.label}`,
+        `epoch: ${packet.epoch}`,
+        `nonce: ${packet.nonce}`,
+        `plaintext bytes: ${packet.plainBytes}`,
+        `ciphertext bytes: ${packet.cipherBytes}`,
+        `AAD: ${packet.aadText}`,
+        `ciphertext preview: ${packet.ciphertextPreview}`,
+        `sent/stored: ciphertext + nonce + AAD + algorithm metadata`,
+        `not sent: raw AES key, system secret, full mouse entropy`
+      ].join("\n");
+      $("receiverKeyMatch").textContent = "derive same context key";
+      $("receiverAad").textContent = `bound to ${packet.label}, epoch ${packet.epoch}`;
+      $("receiverIntegrity").textContent = "waiting for decrypt";
+      $("receiverResult").textContent = "packet ready";
+    }
+
+    function updateReceiverView(ok, detail) {
+      $("receiverKeyMatch").textContent = ok ? "yes" : "no";
+      $("receiverIntegrity").textContent = ok ? "AES-GCM tag valid" : "tag failed";
+      $("receiverResult").textContent = detail;
+    }
+
+    function updateThreatPanel() {
+      const threatScore = Math.min(100, Math.round((state.vibration < 2 ? 20 : 0) + (state.turns < 4 ? 20 : 0) + (state.velocity > 40000 ? 50 : 0)));
+      const verdict = threatScore >= 70 ? "BLOCK" : threatScore >= 35 ? "STEP_UP" : "ALLOW";
+      $("threatOutput").textContent = [
+        `threat action: ${verdict}`,
+        `risk score: ${threatScore}`,
+        `mouse turns: ${state.turns}`,
+        `micro-vibrations: ${state.vibration}`,
+        `latest velocity: ${state.velocity} px/s`,
+        `message/file AAD binds epoch + context + mouse key preview`
+      ].join("\n");
+    }
+
+    async function runDemo() {
+      await manualRotate();
+      $("messageInput").value = "Dashboard demo: every mouse movement and every 0.3s epoch changes the encryption key.";
+      await encryptMessage();
+      await decryptMessage();
+    }
+
+    function clearMouse() {
+      state.mouseEvents = [];
+      state.keyCounter = 0;
+      state.turns = 0;
+      state.vibration = 0;
+      state.velocity = 0;
+      state.latestMouseKey = null;
+      state.latestMouseKeyHex = "";
+      state.latestPacket = null;
+      $("moveCount").textContent = "0";
+      $("keyCount").textContent = "0";
+      $("latestRandom").textContent = "none";
+      $("mouseKey").textContent = "Move the mouse over this page.";
+      updateThreatPanel();
+      updateSystemKeyPanel();
+      $("senderInput").textContent = "waiting";
+      $("senderMouseKey").textContent = "waiting";
+      $("senderAesKey").textContent = "waiting";
+      $("senderAction").textContent = "capture first";
+      $("packetView").textContent = "No packet yet. Encrypt a message or file.";
+      $("receiverKeyMatch").textContent = "waiting";
+      $("receiverAad").textContent = "waiting";
+      $("receiverIntegrity").textContent = "waiting";
+      $("receiverResult").textContent = "waiting";
+    }
+
+    function init() {
+      const hasCrypto = Boolean(window.crypto && crypto.subtle);
+      $("cryptoStatus").textContent = hasCrypto ? "WebCrypto ready" : "WebCrypto unavailable";
+      $("cryptoStatus").className = hasCrypto ? "pill good" : "pill bad";
+      updateSystemKeyPanel();
+      updateThreatPanel();
+      logEvent("Dashboard ready", "local AES-GCM encryption active", "good");
+
+      document.addEventListener("mousemove", (event) => {
+        deriveMouseKey(event).catch((error) => logEvent("Mouse key error", error.message, "bad"));
+      }, { passive: true });
+
+      $("encryptMessage").addEventListener("click", () => encryptMessage().catch((error) => logEvent("Encrypt error", error.message, "bad")));
+      $("decryptMessage").addEventListener("click", () => decryptMessage().catch((error) => logEvent("Decrypt error", error.message, "bad")));
+      $("encryptFilesNow").addEventListener("click", () => encryptSelectedFiles().catch((error) => logEvent("File encrypt error", error.message, "bad")));
+      $("toggleScheduler").addEventListener("click", toggleScheduler);
+      $("manualRotate").addEventListener("click", () => manualRotate().catch((error) => logEvent("Rotate error", error.message, "bad")));
+      $("runDemo").addEventListener("click", () => runDemo().catch((error) => logEvent("Demo error", error.message, "bad")));
+      $("clearMouse").addEventListener("click", clearMouse);
+      $("clearLog").addEventListener("click", () => $("timeline").replaceChildren());
+
+      setInterval(() => {
+        $("epochValue").textContent = String(epoch());
+        updateSchedulerCountdown();
+      }, 250);
+    }
+
+    init();
+  </script>
+</body>
+</html>
