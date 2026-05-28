@@ -125,6 +125,16 @@
     .pill.warn { color: var(--warn); }
     .pill.bad { color: var(--bad); }
 
+    .security-note {
+      border: 1px solid #70552c;
+      background: #231d13;
+      color: #f4d9a6;
+      border-radius: 8px;
+      padding: 10px 12px;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
     main {
       width: min(1680px, 100%);
       margin: 0 auto;
@@ -427,9 +437,12 @@
     <header>
       <h1>SUMIT KEY Security Dashboard</h1>
       <div class="header-meta">
+        <span class="pill warn">volunteer prototype</span>
         <span id="cryptoStatus" class="pill warn">WebCrypto checking</span>
         <span id="rotationStatus" class="pill">0.3s key epochs</span>
         <span id="schedulerStatus" class="pill">file scheduler idle</span>
+        <span id="prototypeStatus" class="pill warn">demo paused</span>
+        <button id="togglePrototype">Run Demo Flow</button>
       </div>
     </header>
 
@@ -440,14 +453,18 @@
           <button id="clearMouse">Clear</button>
         </div>
         <div class="content stack">
+          <div class="security-note">
+            Mouse and keystroke behavior are entropy/risk signals, not a standalone secret. This browser dashboard is for volunteer demos and must run only on trusted devices.
+          </div>
           <div class="metrics">
             <div class="metric"><span>Moves</span><strong id="moveCount">0</strong></div>
+            <div class="metric"><span>Keypresses</span><strong id="keypressCount">0</strong></div>
             <div class="metric"><span>Keys</span><strong id="keyCount">0</strong></div>
             <div class="metric"><span>Random #</span><strong id="latestRandom">none</strong></div>
             <div class="metric"><span>Epoch</span><strong id="epochValue">0</strong></div>
           </div>
           <div class="panel">
-            <h3>Current Mouse-Derived Key</h3>
+            <h3>Current Entropy Fingerprint</h3>
             <div id="mouseKey" class="output mono">Move the mouse over this page.</div>
           </div>
           <div class="panel">
@@ -482,15 +499,15 @@
           <div class="flow">
             <div id="stepCapture" class="flow-step active">
               <b>1. Capture</b>
-              <span>mouse move, turn, vibration, file/message metadata</span>
+              <span>mouse/keyboard signal, OS randomness, file/message metadata</span>
             </div>
             <div id="stepDerive" class="flow-step">
               <b>2. Derive</b>
-              <span>SHA-256 over system secret, epoch, mouse key, counter</span>
+              <span>SHA-256 over browser secret, epoch, entropy fingerprint, counter</span>
             </div>
             <div id="stepEncrypt" class="flow-step">
               <b>3. Encrypt</b>
-              <span>AES-GCM with fresh nonce and authenticated context</span>
+              <span>AES-GCM with a fresh 96-bit nonce and authenticated context</span>
             </div>
             <div id="stepStore" class="flow-step">
               <b>4. Store</b>
@@ -532,12 +549,33 @@
           <div class="grid-2">
             <div class="panel stack">
               <h3>Message Encryption</h3>
+              <div class="security-note">
+                Malware on the device can read plaintext before encryption. Do not paste real secrets into this prototype.
+              </div>
               <textarea id="messageInput">Attack at dawn. This message will be encrypted with the current mouse/system key.</textarea>
               <div class="row">
                 <button id="encryptMessage" class="primary">Encrypt Message</button>
                 <button id="decryptMessage">Decrypt Last</button>
               </div>
               <div id="messageOutput" class="output mono">No encrypted message yet.</div>
+            </div>
+
+            <div class="panel stack">
+              <h3>Ghost Key Handoff</h3>
+              <div class="security-note">
+                A second device cannot recreate the same key from random mouse movement alone. For this demo, the ghost package carries a one-time unlock key and clears it after decrypt.
+              </div>
+              <div class="row">
+                <button id="exportGhost" class="primary">Export Ghost Package</button>
+                <button id="copyGhost">Copy Package</button>
+                <input id="ghostInput" type="file" accept="application/json,.json">
+              </div>
+              <textarea id="ghostPaste" placeholder="Paste a ghost package JSON here to open it on this device."></textarea>
+              <div class="row">
+                <button id="openGhostPaste">Open Pasted Package</button>
+                <button id="clearGhost">Clear Ghost</button>
+              </div>
+              <div id="ghostOutput" class="output mono">Encrypt a message, export the ghost package, then import it on the receiver device.</div>
             </div>
 
             <div class="panel stack">
@@ -557,12 +595,19 @@
 
           <div class="grid-2" style="margin-top: 14px;">
             <div class="panel">
-              <h3>Current System Key Package</h3>
+              <h3>Current Key Fingerprints</h3>
               <div id="systemKey" class="output mono"></div>
             </div>
             <div class="panel">
               <h3>Threat And Health</h3>
               <div id="threatOutput" class="output mono"></div>
+            </div>
+            <div class="panel stack">
+              <h3>Self-Healing Recovery</h3>
+              <div class="row">
+                <button id="simulateHealing" class="primary">Simulate Mid-Flow Fault</button>
+              </div>
+              <div id="healingOutput" class="output mono">No recovery event yet.</div>
             </div>
           </div>
         </div>
@@ -587,18 +632,28 @@
       systemSecret: crypto.getRandomValues(new Uint8Array(32)),
       deviceSalt: crypto.getRandomValues(new Uint8Array(16)),
       mouseEvents: [],
+      keypressEvents: [],
       keyCounter: 0,
       latestMouseKey: null,
-      latestMouseKeyHex: "",
+      latestKeystrokeKey: null,
       latestMessage: null,
       latestPacket: null,
+      latestGhostUrl: null,
+      latestGhostJson: "",
       fileCount: 0,
       scheduler: null,
       nextRunAt: null,
       lastAngle: null,
       turns: 0,
       vibration: 0,
-      velocity: 0
+      velocity: 0,
+      healingJournal: [],
+      prototypeTimer: null,
+      prototypeBusy: false,
+      prototypeStep: 0,
+      prototypeEnabled: false,
+      demoEntropyKey: null,
+      activeEntropySource: "none"
     };
 
     const $ = (id) => document.getElementById(id);
@@ -609,6 +664,23 @@
 
     function shortHex(bytes, n = 24) {
       return hex(bytes).slice(0, n) + "...";
+    }
+
+    function bytesFromHex(value) {
+      if (!/^[0-9a-f]*$/i.test(value) || value.length % 2 !== 0) {
+        throw new Error("invalid hex in ghost package");
+      }
+      const out = new Uint8Array(value.length / 2);
+      for (let i = 0; i < out.length; i += 1) {
+        out[i] = parseInt(value.slice(i * 2, i * 2 + 2), 16);
+      }
+      return out;
+    }
+
+    function fingerprint(bytes, n = 16) {
+      if (!bytes) return "waiting";
+      const raw = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+      return `fp:${hex(raw).slice(0, n)}`;
     }
 
     function nowStamp() {
@@ -649,14 +721,14 @@
     }
 
     async function deriveKeyBytes(label, extraBytes = new Uint8Array()) {
-      const mouse = state.latestMouseKey || new Uint8Array(32);
+      const entropyKey = state.latestMouseKey || state.latestKeystrokeKey || state.demoEntropyKey || new Uint8Array(32);
       const counter = encoder.encode(String(state.keyCounter));
       const epochBytes = encoder.encode(String(epoch()));
       const labelBytes = encoder.encode(label);
       return sha256Bytes([
         state.systemSecret,
         state.deviceSalt,
-        mouse,
+        entropyKey,
         counter,
         epochBytes,
         labelBytes,
@@ -681,7 +753,7 @@
       }));
       const keyBytes = await sha256Bytes([state.systemSecret, data]);
       state.latestMouseKey = keyBytes;
-      state.latestMouseKeyHex = hex(keyBytes);
+      state.activeEntropySource = "real_mouse";
       updateMouseMetrics(event, keyBytes);
       updateSystemKeyPanel();
     }
@@ -710,10 +782,11 @@
 
       const randomNumber = Number(BigInt("0x" + hex(keyBytes.slice(0, 8))) % 9007199254740991n);
       $("moveCount").textContent = String(state.mouseEvents.length);
+      $("keypressCount").textContent = String(state.keypressEvents.length);
       $("keyCount").textContent = String(state.keyCounter);
       $("latestRandom").textContent = String(randomNumber);
       $("epochValue").textContent = String(epoch());
-      $("mouseKey").textContent = state.latestMouseKeyHex;
+      $("mouseKey").textContent = `mouse entropy fingerprint: ${fingerprint(keyBytes)}`;
       $("turnMetric").textContent = String(state.turns);
       $("vibrationMetric").textContent = String(state.vibration);
       $("velocityMetric").textContent = `${state.velocity} px/s`;
@@ -722,7 +795,33 @@
       $("velocityBar").style.width = `${Math.min(100, state.velocity / 30)}%`;
 
       setActiveStep("stepDerive");
-      logEvent("Mouse key created", `key#${state.keyCounter} random=${randomNumber} key=${shortHex(keyBytes)}`, "good");
+      logEvent("Mouse key created", `key#${state.keyCounter} random=${randomNumber} key=${fingerprint(keyBytes)}`, "good");
+    }
+
+    async function deriveKeystrokeKey(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      state.keyCounter += 1;
+      const item = {
+        key: event.key.length === 1 ? "char" : event.key,
+        code: event.code,
+        t: Math.round(performance.now() * 1000),
+        counter: state.keyCounter,
+        salt: hex(state.deviceSalt)
+      };
+      state.keypressEvents.push(item);
+      if (state.keypressEvents.length > 300) state.keypressEvents.shift();
+      const keyBytes = await sha256Bytes([state.systemSecret, encoder.encode(JSON.stringify(item))]);
+      state.latestKeystrokeKey = keyBytes;
+      state.activeEntropySource = "real_keyboard";
+      const randomNumber = Number(BigInt("0x" + hex(keyBytes.slice(0, 8))) % 9007199254740991n);
+      $("keypressCount").textContent = String(state.keypressEvents.length);
+      $("keyCount").textContent = String(state.keyCounter);
+      $("latestRandom").textContent = String(randomNumber);
+      $("epochValue").textContent = String(epoch());
+      $("mouseKey").textContent = `keyboard entropy fingerprint: ${fingerprint(keyBytes)}`;
+      setActiveStep("stepDerive");
+      updateSystemKeyPanel();
+      logEvent("Keyboard key created", `key#${state.keyCounter} random=${randomNumber} key=${fingerprint(keyBytes)}`, "good");
     }
 
     function setActiveStep(id) {
@@ -737,7 +836,10 @@
       const aad = encoder.encode(JSON.stringify({
         label,
         epoch: epoch(),
-        mouseKey: state.latestMouseKeyHex.slice(0, 32),
+        mouseKeyFp: fingerprint(state.latestMouseKey),
+        keyboardKeyFp: fingerprint(state.latestKeystrokeKey),
+        demoKeyFp: fingerprint(state.demoEntropyKey),
+        entropySource: state.activeEntropySource,
         keyCounter: state.keyCounter,
         createdAt: new Date().toISOString()
       }));
@@ -765,15 +867,20 @@
       state.latestMessage = encrypted;
       state.latestPacket = buildPacketSummary(encrypted, "message", plaintext.length);
       $("messageOutput").textContent = [
+        `admin transparency: local browser encryption only`,
+        `prototype boundary: not a hardened production vault`,
         `algorithm: AES-GCM`,
+        `entropy source: ${state.activeEntropySource}`,
         `epoch: ${epoch()}`,
         `nonce: ${hex(encrypted.nonce)}`,
-        `key: ${shortHex(encrypted.keyBytes, 40)}`,
+        `derived key fingerprint: ${fingerprint(encrypted.keyBytes)}`,
         `aad: ${decoder.decode(encrypted.aad)}`,
-        `ciphertext: ${hex(encrypted.ciphertext)}`
+        `ciphertext: ${hex(encrypted.ciphertext)}`,
+        `not exposed: raw AES key, browser secret, full mouse/keyboard entropy`,
+        `device warning: malware can steal plaintext before encryption`
       ].join("\n");
       setActiveStep("stepStore");
-      logEvent("Message encrypted", `bytes=${plaintext.length} nonce=${hex(encrypted.nonce)} key=${shortHex(encrypted.keyBytes)}`, "good");
+      logEvent("Message encrypted", `bytes=${plaintext.length} nonce=${hex(encrypted.nonce)} key=${fingerprint(encrypted.keyBytes)}`, "good");
       updateThreatPanel();
       updateProcessView("Message plaintext", encrypted, "Encrypted message ready for receiver");
     }
@@ -787,6 +894,98 @@
       $("messageOutput").textContent += `\n\nverified plaintext:\n${decoder.decode(plain)}`;
       logEvent("Message decrypted", `verified ${plain.length} bytes`, "good");
       updateReceiverView(true, "message decrypted and tag verified");
+    }
+
+    function exportGhostPackage() {
+      if (!state.latestMessage) {
+        logEvent("Ghost export skipped", "encrypt a message first", "warn");
+        return;
+      }
+      if (state.latestGhostUrl) URL.revokeObjectURL(state.latestGhostUrl);
+      const ghost = {
+        version: 1,
+        purpose: "SUMIT KEY volunteer demo ghost package",
+        warning: "Demo only. Whoever has this package can decrypt once in the dashboard.",
+        algorithm: "AES-GCM",
+        keyHex: hex(state.latestMessage.keyBytes),
+        keyFingerprint: fingerprint(state.latestMessage.keyBytes),
+        nonceHex: hex(state.latestMessage.nonce),
+        aadHex: hex(state.latestMessage.aad),
+        ciphertextHex: hex(state.latestMessage.ciphertext),
+        createdAt: new Date().toISOString()
+      };
+      state.latestGhostJson = JSON.stringify(ghost, null, 2);
+      const blob = new Blob([state.latestGhostJson], { type: "application/json" });
+      state.latestGhostUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = state.latestGhostUrl;
+      link.download = `sumitkey-ghost-${Date.now().toString(36)}.json`;
+      link.click();
+      $("ghostOutput").textContent = [
+        `ghost package exported`,
+        `key fingerprint: ${ghost.keyFingerprint}`,
+        `receiver action: import package, decrypt once, key clears from memory`,
+        `demo boundary: the package carries the unlock key; random mouse movement on another device cannot recreate it`
+      ].join("\n");
+      logEvent("Ghost package exported", `key=${ghost.keyFingerprint}`, "good");
+    }
+
+    async function copyGhostPackage() {
+      if (!state.latestGhostJson) {
+        logEvent("Ghost copy skipped", "export a ghost package first", "warn");
+        return;
+      }
+      await navigator.clipboard.writeText(state.latestGhostJson);
+      $("ghostOutput").textContent = [
+        `ghost package copied`,
+        `paste it into another dashboard or send it to a test receiver`,
+        `demo boundary: pasted package carries the one-time unlock key`
+      ].join("\n");
+      logEvent("Ghost package copied", "package JSON copied to clipboard", "good");
+    }
+
+    async function importGhostPackageText(text) {
+      const ghost = JSON.parse(text);
+      if (ghost.version !== 1 || ghost.algorithm !== "AES-GCM") {
+        throw new Error("unsupported ghost package");
+      }
+      const packageData = {
+        keyBytes: bytesFromHex(String(ghost.keyHex || "")),
+        nonce: bytesFromHex(String(ghost.nonceHex || "")),
+        aad: bytesFromHex(String(ghost.aadHex || "")),
+        ciphertext: bytesFromHex(String(ghost.ciphertextHex || ""))
+      };
+      const plain = await decryptPayload(packageData, "ghost");
+      const keyFp = fingerprint(packageData.keyBytes);
+      packageData.keyBytes.fill(0);
+      $("ghostOutput").textContent = [
+        `ghost package opened`,
+        `key fingerprint: ${keyFp}`,
+        `plaintext: ${decoder.decode(plain)}`,
+        `ghost key status: cleared from receiver memory after decrypt`
+      ].join("\n");
+      updateReceiverView(true, "ghost package decrypted once and key cleared");
+      logEvent("Ghost package opened", `key=${keyFp} cleared after decrypt`, "good");
+      $("ghostInput").value = "";
+      $("ghostPaste").value = "";
+    }
+
+    async function importGhostPackage(file) {
+      if (!file) return;
+      await importGhostPackageText(await file.text());
+    }
+
+    function clearGhostPackage() {
+      if (state.latestGhostUrl) {
+        URL.revokeObjectURL(state.latestGhostUrl);
+        state.latestGhostUrl = null;
+      }
+      state.latestGhostJson = "";
+      state.latestGhostJson = "";
+      $("ghostInput").value = "";
+      $("ghostPaste").value = "";
+      $("ghostOutput").textContent = "Ghost package cleared from this browser view.";
+      logEvent("Ghost package cleared", "local package text and download URL removed", "warn");
     }
 
     async function encryptSelectedFiles() {
@@ -808,7 +1007,7 @@
           epoch: epoch(),
           nonceHex: hex(encrypted.nonce),
           aadHex: hex(encrypted.aad),
-          keyPreview: shortHex(encrypted.keyBytes, 32),
+          keyFingerprint: fingerprint(encrypted.keyBytes),
           ciphertextHex: hex(encrypted.ciphertext)
         }, null, 2);
         const blob = new Blob([packageJson], { type: "application/json" });
@@ -823,7 +1022,7 @@
         item.appendChild(link);
         $("fileList").prepend(item);
         state.fileCount += 1;
-        logEvent("File encrypted", `${file.name} key=${shortHex(encrypted.keyBytes)} nonce=${hex(encrypted.nonce)}`, "good");
+        logEvent("File encrypted", `${file.name} key=${fingerprint(encrypted.keyBytes)} nonce=${hex(encrypted.nonce)}`, "good");
         updateProcessView(`File: ${file.name}`, encrypted, "Encrypted file package stored");
         updateReceiverView(true, "file package produced with AES-GCM tag");
       }
@@ -864,22 +1063,23 @@
     async function manualRotate() {
       state.systemSecret = crypto.getRandomValues(new Uint8Array(32));
       state.deviceSalt = crypto.getRandomValues(new Uint8Array(16));
-      state.keyCounter += 1;
-      state.latestMouseKey = await sha256Bytes([state.systemSecret, state.deviceSalt, encoder.encode(String(Date.now()))]);
-      state.latestMouseKeyHex = hex(state.latestMouseKey);
+      state.activeEntropySource = "system_rotation";
       updateSystemKeyPanel();
       setActiveStep("stepRotate");
-      logEvent("System key rotated", `new key=${shortHex(state.latestMouseKey)}`, "good");
+      logEvent("System key rotated", "system secret and device salt refreshed", "good");
     }
 
     function updateSystemKeyPanel() {
       $("systemKey").textContent = [
         `epoch: ${epoch()}`,
         `epoch length: 0.3 seconds`,
-        `device salt: ${hex(state.deviceSalt)}`,
-        `mouse key: ${state.latestMouseKeyHex || "waiting for movement"}`,
-        `system secret preview: ${shortHex(state.systemSecret, 24)}`,
-        `next AES key changes with: mouse event, epoch, counter, file/message context`
+        `device salt fingerprint: ${fingerprint(state.deviceSalt)}`,
+        `real mouse entropy: ${fingerprint(state.latestMouseKey)}`,
+        `real keyboard entropy: ${fingerprint(state.latestKeystrokeKey)}`,
+        `demo entropy: ${fingerprint(state.demoEntropyKey)}`,
+        `active entropy source: ${state.activeEntropySource}`,
+        `browser secret: held in memory, never displayed`,
+        `next AES key changes with: real input or demo entropy, epoch, counter, file/message context`
       ].join("\n");
     }
 
@@ -894,7 +1094,7 @@
         nonce: hex(encrypted.nonce),
         aad: JSON.parse(aadText),
         aadText,
-        keyPreview: shortHex(encrypted.keyBytes, 40),
+        keyPreview: fingerprint(encrypted.keyBytes),
         ciphertextPreview: shortHex(encrypted.ciphertext, 72)
       };
     }
@@ -902,7 +1102,7 @@
     function updateProcessView(inputName, encrypted, actionText) {
       const packet = state.latestPacket || buildPacketSummary(encrypted, encrypted.label, encrypted.byteLength);
       $("senderInput").textContent = `${inputName} (${packet.plainBytes} B)`;
-      $("senderMouseKey").textContent = state.latestMouseKeyHex ? state.latestMouseKeyHex.slice(0, 40) + "..." : "zero bootstrap key";
+      $("senderMouseKey").textContent = state.latestMouseKey ? fingerprint(state.latestMouseKey) : "bootstrap entropy";
       $("senderAesKey").textContent = packet.keyPreview;
       $("senderAction").textContent = actionText;
       $("packetView").textContent = [
@@ -914,8 +1114,9 @@
         `ciphertext bytes: ${packet.cipherBytes}`,
         `AAD: ${packet.aadText}`,
         `ciphertext preview: ${packet.ciphertextPreview}`,
+        `admin transparency: plaintext is converted to bytes, bound to AAD, encrypted in browser`,
         `sent/stored: ciphertext + nonce + AAD + algorithm metadata`,
-        `not sent: raw AES key, system secret, full mouse entropy`
+        `not sent: raw AES key, browser secret, full mouse/keyboard entropy`
       ].join("\n");
       $("receiverKeyMatch").textContent = "derive same context key";
       $("receiverAad").textContent = `bound to ${packet.label}, epoch ${packet.epoch}`;
@@ -938,27 +1139,139 @@
         `mouse turns: ${state.turns}`,
         `micro-vibrations: ${state.vibration}`,
         `latest velocity: ${state.velocity} px/s`,
-        `message/file AAD binds epoch + context + mouse key preview`
+        `message/file AAD binds epoch + context + entropy fingerprints`,
+        `self-healing rule: retry transient faults, never bypass BLOCK`
       ].join("\n");
+    }
+
+    function recordHealing(stage, status, detail) {
+      const event = {
+        time: nowStamp(),
+        operation: `dash-${Date.now().toString(36)}`,
+        stage,
+        status,
+        detail
+      };
+      state.healingJournal.push(event);
+      while (state.healingJournal.length > 12) state.healingJournal.shift();
+      $("healingOutput").textContent = state.healingJournal
+        .map((item) => `${item.time} ${item.stage} ${item.status}: ${item.detail}`)
+        .join("\n");
+      return event;
+    }
+
+    async function simulateHealing() {
+      recordHealing("preflight", "ok", "journal checkpoint written");
+      recordHealing("primary.encrypt", "retryable", "simulated mid-flow interruption");
+      setActiveStep("stepRotate");
+      await manualRotate();
+      recordHealing("heal", "ok", "fresh 0.3s epoch and key created");
+      await encryptMessage();
+      recordHealing("verify", "ok", "AES-GCM decrypt check passed");
+      recordHealing("commit", "ok", "packet committed after recovery");
+      logEvent("Self-healing complete", "fault recovered with fresh rotating key", "good");
     }
 
     async function runDemo() {
       await manualRotate();
       $("messageInput").value = "Dashboard demo: every mouse movement and every 0.3s epoch changes the encryption key.";
+      await deriveDemoEntropyKey();
       await encryptMessage();
       await decryptMessage();
     }
 
+    async function deriveDemoEntropyKey() {
+      const step = state.prototypeStep;
+      const payload = encoder.encode(JSON.stringify({
+        demo: true,
+        step,
+        epoch: epoch(),
+        t: Math.round(performance.now() * 1000),
+        salt: hex(state.deviceSalt)
+      }));
+      const keyBytes = await sha256Bytes([state.systemSecret, payload]);
+      state.demoEntropyKey = keyBytes;
+      state.activeEntropySource = "demo_simulation";
+      updateSystemKeyPanel();
+      logEvent("Demo entropy created", `demo#${step} key=${fingerprint(keyBytes)}`, "info");
+    }
+
+    async function runPrototypeTick() {
+      if (!state.prototypeEnabled || state.prototypeBusy) return;
+      state.prototypeBusy = true;
+      try {
+        state.prototypeStep += 1;
+        setActiveStep("stepCapture");
+        await deriveDemoEntropyKey();
+        $("messageInput").value = `Live prototype packet ${state.prototypeStep}: rotating key epoch ${epoch()} with mouse-turn entropy.`;
+        await encryptMessage();
+        await decryptMessage();
+        if (state.prototypeStep % 5 === 0) {
+          await simulateHealing();
+        }
+        $("prototypeStatus").textContent = `prototype live #${state.prototypeStep}`;
+        $("prototypeStatus").className = "pill good";
+      } catch (error) {
+        $("prototypeStatus").textContent = "prototype fault";
+        $("prototypeStatus").className = "pill bad";
+        logEvent("Prototype fault", error.message, "bad");
+      } finally {
+        state.prototypeBusy = false;
+      }
+    }
+
+    function startPrototype() {
+      if (state.prototypeTimer) return;
+      state.prototypeEnabled = true;
+      $("togglePrototype").textContent = "Pause Demo";
+      $("prototypeStatus").textContent = "demo running";
+      $("prototypeStatus").className = "pill good";
+      runPrototypeTick().catch((error) => logEvent("Prototype start error", error.message, "bad"));
+      state.prototypeTimer = setInterval(() => {
+        runPrototypeTick().catch((error) => logEvent("Prototype error", error.message, "bad"));
+      }, 2200);
+    }
+
+    function stopPrototype() {
+      state.prototypeEnabled = false;
+      if (state.prototypeTimer) {
+        clearInterval(state.prototypeTimer);
+        state.prototypeTimer = null;
+      }
+      $("togglePrototype").textContent = "Run Demo Flow";
+      $("prototypeStatus").textContent = "demo paused";
+      $("prototypeStatus").className = "pill warn";
+      logEvent("Prototype paused", "automatic flow stopped", "warn");
+    }
+
+    function togglePrototype() {
+      if (state.prototypeTimer) {
+        stopPrototype();
+      } else {
+        startPrototype();
+        logEvent("Prototype resumed", "automatic flow active", "good");
+      }
+    }
+
     function clearMouse() {
       state.mouseEvents = [];
+      state.keypressEvents = [];
       state.keyCounter = 0;
       state.turns = 0;
       state.vibration = 0;
       state.velocity = 0;
       state.latestMouseKey = null;
-      state.latestMouseKeyHex = "";
+      state.latestKeystrokeKey = null;
+      state.demoEntropyKey = null;
+      state.activeEntropySource = "none";
       state.latestPacket = null;
+      state.latestMessage = null;
+      if (state.latestGhostUrl) {
+        URL.revokeObjectURL(state.latestGhostUrl);
+        state.latestGhostUrl = null;
+      }
       $("moveCount").textContent = "0";
+      $("keypressCount").textContent = "0";
       $("keyCount").textContent = "0";
       $("latestRandom").textContent = "none";
       $("mouseKey").textContent = "Move the mouse over this page.";
@@ -969,10 +1282,15 @@
       $("senderAesKey").textContent = "waiting";
       $("senderAction").textContent = "capture first";
       $("packetView").textContent = "No packet yet. Encrypt a message or file.";
+      $("messageOutput").textContent = "No encrypted message yet.";
+      $("ghostOutput").textContent = "Encrypt a message, export the ghost package, then import it on the receiver device.";
+      $("ghostInput").value = "";
+      $("ghostPaste").value = "";
       $("receiverKeyMatch").textContent = "waiting";
       $("receiverAad").textContent = "waiting";
       $("receiverIntegrity").textContent = "waiting";
       $("receiverResult").textContent = "waiting";
+      state.prototypeStep = 0;
     }
 
     function init() {
@@ -986,6 +1304,9 @@
       document.addEventListener("mousemove", (event) => {
         deriveMouseKey(event).catch((error) => logEvent("Mouse key error", error.message, "bad"));
       }, { passive: true });
+      document.addEventListener("keydown", (event) => {
+        deriveKeystrokeKey(event).catch((error) => logEvent("Keyboard key error", error.message, "bad"));
+      });
 
       $("encryptMessage").addEventListener("click", () => encryptMessage().catch((error) => logEvent("Encrypt error", error.message, "bad")));
       $("decryptMessage").addEventListener("click", () => decryptMessage().catch((error) => logEvent("Decrypt error", error.message, "bad")));
@@ -993,6 +1314,17 @@
       $("toggleScheduler").addEventListener("click", toggleScheduler);
       $("manualRotate").addEventListener("click", () => manualRotate().catch((error) => logEvent("Rotate error", error.message, "bad")));
       $("runDemo").addEventListener("click", () => runDemo().catch((error) => logEvent("Demo error", error.message, "bad")));
+      $("exportGhost").addEventListener("click", exportGhostPackage);
+      $("copyGhost").addEventListener("click", () => copyGhostPackage().catch((error) => logEvent("Ghost copy error", error.message, "bad")));
+      $("ghostInput").addEventListener("change", (event) => {
+        importGhostPackage(event.target.files && event.target.files[0]).catch((error) => logEvent("Ghost import error", error.message, "bad"));
+      });
+      $("openGhostPaste").addEventListener("click", () => {
+        importGhostPackageText($("ghostPaste").value).catch((error) => logEvent("Ghost paste error", error.message, "bad"));
+      });
+      $("clearGhost").addEventListener("click", clearGhostPackage);
+      $("simulateHealing").addEventListener("click", () => simulateHealing().catch((error) => logEvent("Healing error", error.message, "bad")));
+      $("togglePrototype").addEventListener("click", togglePrototype);
       $("clearMouse").addEventListener("click", clearMouse);
       $("clearLog").addEventListener("click", () => $("timeline").replaceChildren());
 

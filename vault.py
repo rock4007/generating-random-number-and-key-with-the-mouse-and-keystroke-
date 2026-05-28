@@ -402,6 +402,8 @@ class HighVoltageVault:
                 raise PermissionError("Vault is BURNED — key has been destroyed")
             if entry.state in (VaultState.SEALED, VaultState.ZEROIZED):
                 raise PermissionError(f"Vault is {entry.state.value} — no access")
+            if entry.state == VaultState.HOT:
+                raise PermissionError("Vault is HOT — concurrent read in progress")
             if entry.is_expired():
                 entry.state = VaultState.SEALED
                 raise PermissionError("Vault is SEALED — TTL expired")
@@ -523,7 +525,7 @@ class MITMShield:
         self._session: _ShieldSession | None = None
         self._ek: bytes | None = None
         self._dk: bytes | None = None
-        self._seen_seqs: set[int] = set()
+        self._max_seen_seq: int = -1  # tracks highest accepted seq; replaces unbounded set
         self._lock = threading.Lock()
 
     # ── Session establishment ────────────────────────────────────────────────
@@ -701,12 +703,15 @@ class MITMShield:
                 f"Packet timestamp {ts:.1f} outside ±{_REPLAY_WINDOW_SECONDS}s window"
             )
 
-        # Sequence number (anti-replay / anti-duplication)
+        # Sequence number (anti-replay / anti-duplication).
+        # Sequences are strictly monotonic per session, so we reject anything
+        # at or below the last accepted sequence rather than storing all seen
+        # values (which would grow without bound).
         seq = struct.unpack(">Q", seq_bytes)[0]
         with self._lock:
-            if seq in self._seen_seqs:
-                raise MITMShieldError(f"Duplicate sequence {seq} — replay attack detected")
-            self._seen_seqs.add(seq)
+            if seq <= self._max_seen_seq:
+                raise MITMShieldError(f"Sequence {seq} replayed or out of order (max seen: {self._max_seen_seq})")
+            self._max_seen_seq = seq
 
         # Decrypt
         aad = _SHIELD_MAGIC + bytes([_SHIELD_VERSION]) + session_id + ts_bytes + seq_bytes + pkt_aad

@@ -375,7 +375,9 @@ class KeyGenerator:
 
 
 if __name__ == "__main__":
-    sample_entropy = b"A" * 32
+    # Dev smoke-test only — never run this in production or log its output.
+    # Raw key material is intentionally not printed; only metadata is shown.
+    sample_entropy = os.urandom(32)   # use real randomness, not a constant
     key = KeyGenerator.generate_key(sample_entropy)
-    print("Generated key (hex):", key.hex())
-    print(f"Key length: {len(key) * 8} bits")
+    print(f"Key length : {len(key) * 8} bits")
+    print(f"Key prefix : {key[:4].hex()}... [remaining bytes withheld]")

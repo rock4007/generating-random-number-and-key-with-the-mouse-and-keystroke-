@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SUMIT KEY Ghost Unlock</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      width: 420px;
+      min-height: 580px;
+      margin: 0;
+      background: #101418;
+      color: #eef4f8;
+      font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #2b3440;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #151b22;
+    }
+    h1 { margin: 0; font-size: 16px; }
+    .pill {
+      border: 1px solid #334155;
+      background: #1f2937;
+      color: #aeb9c6;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .pill.good { color: #64d58a; }
+    .pill.warn { color: #f5c86b; }
+    .pill.bad  { color: #ff7b86; }
+    nav { display: flex; border-bottom: 1px solid #2b3440; background: #121820; }
+    .tab {
+      flex: 1;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: #95a3b3;
+      padding: 10px 6px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .tab.active { color: #ffffff; border-bottom-color: #64d58a; }
+    main { padding: 14px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    label { display: block; margin: 10px 0 4px; color: #aeb9c6; font-size: 12px; }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid #334155;
+      background: #161d25;
+      color: #eef4f8;
+      border-radius: 6px;
+      padding: 8px;
+      font: inherit;
+    }
+    textarea { min-height: 78px; resize: vertical; }
+    button.action {
+      width: 100%;
+      border: 1px solid #3b8260;
+      background: #256d4f;
+      color: #ffffff;
+      border-radius: 6px;
+      padding: 9px 10px;
+      margin-top: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary { background: #202a35; border-color: #3b4654; }
+    button.danger    { background: #7f2731; border-color: #b54b59; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .box {
+      margin-top: 10px;
+      border: 1px solid #2b3440;
+      background: #121820;
+      border-radius: 6px;
+      padding: 10px;
+      word-break: break-word;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+    .meter {
+      height: 8px;
+      border-radius: 999px;
+      background: #202a35;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .meter i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: #64d58a;
+      transition: width 0.2s ease;
+    }
+    .note {
+      border-left: 3px solid #f5c86b;
+      background: #211b10;
+      color: #f7dca1;
+      padding: 8px 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-size: 12px;
+    }
+    .ghost-code-box {
+      margin-top: 10px;
+      border: 2px solid #64d58a;
+      background: #0d1f18;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .ghost-code-box .label { color: #64d58a; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; }
+    .ghost-code-box .code {
+      font: 700 22px/1.3 "Courier New", Courier, monospace;
+      color: #a7f3d0;
+      letter-spacing: 0.12em;
+      word-break: break-all;
+    }
+    .ghost-code-box .hint { color: #6b8b7c; font-size: 11px; margin-top: 4px; }
+    code { color: #a7f3d0; }
+    #ghostCodeWrap { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SUMIT KEY Ghost</h1>
+    <span id="apiStatus" class="pill warn">checking</span>
+  </header>
+  <nav>
+    <button class="tab active" data-tab="send">Send</button>
+    <button class="tab" data-tab="receive">Receive</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+  <main>
+
+    <!-- SEND TAB -->
+    <section id="send" class="panel active">
+      <div class="note" id="sendNote">
+        Works on any device — no server needed. AES-256-GCM encrypted in your browser.
+        Share the <strong>package JSON</strong> and the <strong>ghost code separately</strong>.
+      </div>
+      <label for="message">Message</label>
+      <textarea id="message" placeholder="Type your secret message"></textarea>
+      <label for="label">Label</label>
+      <input id="label" value="volunteer-demo">
+      <label for="ttl">Lifetime</label>
+      <select id="ttl">
+        <option value="60">1 minute</option>
+        <option value="120" selected>2 minutes</option>
+        <option value="300">5 minutes</option>
+        <option value="600">10 minutes</option>
+      </select>
+      <button id="createPackage" class="action">Create Ghost Package</button>
+      <div class="row">
+        <button id="copyPackage" class="action secondary">Copy Package JSON</button>
+        <button id="copyCode"    class="action secondary" style="display:none">Copy Ghost Code</button>
+        <button id="revokePackage" class="action danger"  style="display:none">Revoke (API)</button>
+      </div>
+      <div id="ghostCodeDisplay" class="ghost-code-box" style="display:none">
+        <div class="label">GHOST CODE — share this via a different channel</div>
+        <div class="code" id="ghostCodeText"></div>
+        <div class="hint">Do NOT include this in the same message as the package JSON.</div>
+      </div>
+      <div id="sendOutput" class="box">No package yet.</div>
+    </section>
+
+    <!-- RECEIVE TAB -->
+    <section id="receive" class="panel">
+      <div class="note">
+        Move the mouse or type anywhere in your browser first. Once presence is ready the message opens automatically (API mode) or when you click Open (local mode).
+      </div>
+      <div>Presence score: <strong id="presenceScore">0</strong> / <span id="requiredScore">40</span></div>
+      <div class="meter"><i id="presenceBar"></i></div>
+      <label for="packageText">Ghost package JSON</label>
+      <textarea id="packageText" placeholder="Paste package JSON from sender"></textarea>
+      <div id="ghostCodeWrap">
+        <label for="ghostCode">Ghost Code (from sender, different channel)</label>
+        <input id="ghostCode" placeholder="AAAAA-BBBBB" autocomplete="off" spellcheck="false"
+               style="font-family:'Courier New',monospace;letter-spacing:0.08em;font-size:15px">
+      </div>
+      <button id="savePackage"  class="action">Save &amp; Auto Open</button>
+      <button id="unlockNow"    class="action secondary">Open Now</button>
+      <button id="clearAll"     class="action danger">Clear Local Ghost Data</button>
+      <div id="receiveOutput" class="box">Paste a package, then move / type on this device.</div>
+    </section>
+
+    <!-- SETTINGS TAB -->
+    <section id="settings" class="panel">
+      <div class="note">
+        The extension works fully offline using browser-native AES-256-GCM (PBKDF2-SHA-256, 210 000 iterations).
+        Point to a server only if you want server-side burn-after-read or the quantum pipeline.
+      </div>
+      <label for="apiBase">Ghost API URL (optional)</label>
+      <input id="apiBase" placeholder="http://localhost:8000">
+      <button id="saveApi"       class="action">Save API URL</button>
+      <button id="refreshState"  class="action secondary">Refresh State</button>
+      <div class="box">
+        Local mode: AES-256-GCM · PBKDF2-SHA-256 · 210 k iter · 12-byte nonce<br>
+        API mode: ML-KEM-1024 · AES-256-GCM · Argon2id · HKDF-SHA3-512<br>
+        Endpoints: <code>/ghost/encrypt</code>, <code>/ghost/decrypt</code>, <code>/ghost/revoke</code>
+      </div>
+    </section>
+
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

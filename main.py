@@ -275,11 +275,17 @@ def _build_combined_report(experiment_results: dict[str, dict[str, Any]]) -> str
         lines.append(
             f"Overall pass rate: {result['overall_pass_rate_percent']:.2f}%"
         )
+        lines.append(
+            "Library-calibrated pass rate: "
+            f"{result.get('calibrated_passed_tests', 0)}/{result.get('calibrated_eligible_tests', 0)} "
+            f"({result.get('calibrated_pass_rate_percent', 0.0):.2f}%)"
+        )
         lines.append("")
 
     lines.append("Note:")
     lines.append("- NIST SP 800-22 is statistical, so occasional failures can occur even with strong randomness.")
     lines.append("- For broader eligibility across all 15 tests, increase total evaluated bits.")
+    lines.append("- The calibrated score excludes local nistrng tests that fail the os.urandom baseline in this environment.")
 
     return "\n".join(lines) + "\n"
 

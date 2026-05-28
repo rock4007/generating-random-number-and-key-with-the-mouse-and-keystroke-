@@ -427,7 +427,8 @@ def quantum_encrypt_message(
 
     # Step 1 — ML-KEM encapsulation
     kem_shared, kem_ct = ML_KEM_1024.encaps(ek_bytes)
-    assert len(kem_ct) == _ML_KEM_CT_SIZE, f"Unexpected kem_ct size {len(kem_ct)}"
+    if len(kem_ct) != _ML_KEM_CT_SIZE:
+        raise ValueError(f"ML-KEM-1024 returned unexpected kem_ct size {len(kem_ct)} (expected {_ML_KEM_CT_SIZE})")
 
     # Step 2 — Argon2id hardening of behavioural entropy
     argon2_salt = os.urandom(16)
@@ -439,7 +440,8 @@ def quantum_encrypt_message(
     kem_aes = AESGCM(kem_shared[:32])
     hardened_nonce = os.urandom(NONCE_SIZE)
     hardened_enc = kem_aes.encrypt(hardened_nonce, hardened, None)
-    assert len(hardened_enc) == _HARDENED_ENC_LEN, f"hardened_enc size mismatch {len(hardened_enc)}"
+    if len(hardened_enc) != _HARDENED_ENC_LEN:
+        raise ValueError(f"Hardened enc size mismatch {len(hardened_enc)} (expected {_HARDENED_ENC_LEN})")
 
     # Step 4 — Derive the final session key from both sources
     session_key = _qs_derive_session_key(kem_shared, hardened)

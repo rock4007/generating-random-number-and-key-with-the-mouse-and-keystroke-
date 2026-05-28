@@ -18,6 +18,7 @@ service_account.json
 # Generated binary key material
 results/*.bin
 results/*.key
+dist/
 
 # IDE and OS noise
 .DS_Store

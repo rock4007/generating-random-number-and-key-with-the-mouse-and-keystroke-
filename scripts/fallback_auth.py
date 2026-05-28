@@ -1,14 +1,15 @@
 """fallback_auth.py — Scenario authentication fallback chain for SUMIT KEY.
 
 This module models the real-world flow:
-1. Try mouse-turn / vibration behaviour first.
-2. If movement quality is weak or does not match, require OTP by phone/email.
-3. If OTP is unavailable or wrong, require phone NFC.
+1. Try mouse-turn / vibration behaviour as a risk signal first.
+2. If movement quality is weak or does not match, require a stronger factor.
+3. Prefer passkeys/FIDO2/WebAuthn or secure hardware tokens; SMS/email OTP is
+   only a restricted recovery fallback in this sandbox model.
 
 The providers here are sandbox-safe simulations. They do not send SMS/email and
 do not access NFC hardware. Production integrations should replace the provider
-methods with Twilio/SMTP/WebAuthn/NFC bridge calls while preserving the same
-decision states.
+methods with passkeys/FIDO2/WebAuthn or a reviewed hardware-token bridge while
+preserving the same fail-closed decision states.
 """
 
 from __future__ import annotations

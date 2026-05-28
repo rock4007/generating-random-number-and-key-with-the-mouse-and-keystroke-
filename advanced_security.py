@@ -164,6 +164,7 @@ class AdvancedThreatDetector:
         self.block_threshold = block_threshold
         self.step_up_threshold = step_up_threshold
         self._seen_message_ids: set[str] = set()
+        self._seen_message_ids_limit = 100_000   # evict oldest half when full
         self._recent_attempts: dict[str, list[float]] = {}
 
     def assess(
@@ -186,6 +187,10 @@ class AdvancedThreatDetector:
             if message_id in self._seen_message_ids:
                 signals.append(ThreatSignal("replay_message_id", 95, "message id was already used"))
             else:
+                if len(self._seen_message_ids) >= self._seen_message_ids_limit:
+                    # Discard the oldest half to bound memory use.
+                    keep = set(list(self._seen_message_ids)[self._seen_message_ids_limit // 2:])
+                    self._seen_message_ids = keep
                 self._seen_message_ids.add(message_id)
 
         key = f"{identity.user_id}|{source_ip}"

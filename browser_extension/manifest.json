@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "SUMIT KEY Ghost Unlock",
+  "version": "1.2.0",
+  "description": "Create and open SUMIT KEY ghost messages from any device using local mouse and keystroke presence.",
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SUMIT KEY Ghost Unlock"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none';"
+  }
+}

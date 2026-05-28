@@ -15,19 +15,40 @@ Tests:
 from __future__ import annotations
 
 import math
+import os
+import sys
 import threading
 import time
 from collections import Counter
 from math import atan2, degrees, sqrt
+from pathlib import Path
 from threading import Lock
+import unittest
 
-from pynput import mouse as pynput_mouse
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+try:
+    from pynput import mouse as pynput_mouse
+except ImportError as exc:
+    pynput_mouse = None
+    PYNPUT_IMPORT_ERROR = exc
+else:
+    PYNPUT_IMPORT_ERROR = None
 
 from entropy_engine import extract_mouse_entropy
 
 CAPTURE_DURATION = 4.0   # seconds per capture window
 MIN_EVENTS = 10          # minimum mouse events expected
 MIN_SHANNON = 1.5        # bits/byte threshold
+
+
+def _require_mouse_backend() -> None:
+    if pynput_mouse is None:
+        raise unittest.SkipTest(f"pynput mouse backend unavailable: {PYNPUT_IMPORT_ERROR}")
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        raise unittest.SkipTest("mouse entropy test requires a GUI display or input backend")
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +69,7 @@ def _capture_mouse_only(duration: float) -> list[dict]:
     Only starts a mouse.Listener (no keyboard.Listener) to avoid the X11
     XRecord hang on join() in headless environments.
     """
+    _require_mouse_backend()
     events: list[dict] = []
     last_point: dict | None = None
     lock = Lock()
@@ -87,8 +109,20 @@ def _capture_mouse_only(duration: float) -> list[dict]:
 
 
 def _inject_movements(duration: float) -> None:
-    """Drive the virtual cursor in a figure-8 using pynput Controller."""
-    controller = pynput_mouse.Controller()
+    """Drive the virtual cursor in a figure-8 using pynput Controller.
+
+    Silently exits if the mouse backend or display is unavailable — this
+    function runs as a daemon thread where raising SkipTest causes an
+    unhandled-thread-exception warning.
+    """
+    if pynput_mouse is None:
+        return
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        return
+    try:
+        controller = pynput_mouse.Controller()
+    except Exception:
+        return
     end = time.time() + duration
     step = 0
     while time.time() < end:
@@ -123,9 +157,12 @@ def test_mouse_events_are_captured() -> list:
     return events
 
 
-def test_entropy_bytes_are_non_trivial(events: list) -> bytes:
-    print("\n[TEST 2] Extracted entropy bytes are non-empty and non-trivial...")
+def _check_entropy_non_trivial(events: list) -> bytes:
+    """Helper: assert that extracted entropy bytes are non-trivial.
 
+    Not a test function (no 'test_' prefix) — called both from the
+    hardware-capture tests and from the standalone synthetic test below.
+    """
     entropy_bytes = extract_mouse_entropy(events)
 
     assert isinstance(entropy_bytes, (bytes, bytearray)), "extract_mouse_entropy must return bytes"
@@ -141,6 +178,20 @@ def test_entropy_bytes_are_non_trivial(events: list) -> bytes:
     )
     print(f"  PASS — entropy bytes look non-trivial")
     return bytes(entropy_bytes)
+
+
+def test_entropy_bytes_are_non_trivial_synthetic() -> None:
+    """Headless-safe: verify entropy extraction on synthetic mouse events.
+
+    Uses make_chess_like_mouse_events (no display required) so this test
+    always runs, even in CI environments without a mouse or X server.
+    """
+    from fallback_auth import make_chess_like_mouse_events
+
+    print("\n[TEST 2-synthetic] Entropy bytes are non-trivial on synthetic events...")
+    events = make_chess_like_mouse_events(good=True, moves=16)
+    result = _check_entropy_non_trivial(events)
+    assert result is not None
 
 
 def test_two_captures_differ() -> None:
@@ -171,6 +222,12 @@ if __name__ == "__main__":
     print("=" * 60)
     print("  Mouse Entropy Generation Test")
     print("=" * 60)
+
+    try:
+        _require_mouse_backend()
+    except unittest.SkipTest as exc:
+        print(f"  SKIP — {exc}")
+        raise SystemExit(0) from exc
 
     passed = 0
     failed = 0

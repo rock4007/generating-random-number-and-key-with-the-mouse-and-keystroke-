@@ -1,36 +1,33 @@
 from __future__ import annotations
 
-from threading import Thread
+import sys
 import time
+from pathlib import Path
 
-from analyze_per_move_randomness import _capture_mouse_only, _inject_mouse
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from debug_pipeline import make_synthetic_keystroke_events, make_synthetic_mouse_events
 from main import run_all_experiments
 
 
 def synthetic_capture(duration_seconds: float):
-    injector = Thread(target=_inject_mouse, args=(duration_seconds,), daemon=True)
-    injector.start()
-    mouse_events = _capture_mouse_only(duration_seconds)
-    injector.join(timeout=1.0)
+    """Return synthetic events for headless NIST validation runs."""
 
-    keystroke_events = []
+    mouse_events = make_synthetic_mouse_events(max(96, int(duration_seconds * 32)))
+    keystroke_events = make_synthetic_keystroke_events(max(32, int(duration_seconds * 12)))
+
     base = time.time()
-    keys = ["char:a", "char:s", "char:d", "char:f", "char:j", "char:k", "char:l", "char:;"]
-
-    for i, k in enumerate(keys * 24):
-        press = base + i * (0.055 + (i % 7) * 0.0025)
-        dwell = 0.04 + (i % 9) * 0.003
-        release = press + dwell
-        flight = 0.0 if i == 0 else (release - keystroke_events[-1]["release_timestamp"]) * 1000.0
-        keystroke_events.append(
-            {
-                "key": k,
-                "press_timestamp": press,
-                "release_timestamp": release,
-                "dwell_time_ms": dwell * 1000.0,
-                "flight_time_ms": flight,
-            }
-        )
+    for index, event in enumerate(mouse_events):
+        event["timestamp"] = base + index * 0.031
+    for index, event in enumerate(keystroke_events):
+        press = base + index * 0.071
+        dwell = 0.04 + (index % 9) * 0.003
+        event["press_timestamp"] = press
+        event["release_timestamp"] = press + dwell
+        event["dwell_time_ms"] = dwell * 1000.0
+        event["flight_time_ms"] = 0.0 if index == 0 else 31.0 + (index % 7)
 
     return mouse_events, keystroke_events
 
@@ -47,5 +44,7 @@ if __name__ == "__main__":
         print(
             f"{name}: {result['overall_passed_tests']}/{result['overall_eligible_tests']} "
             f"({result['overall_pass_rate_percent']:.2f}%), "
+            f"calibrated={result['calibrated_passed_tests']}/{result['calibrated_eligible_tests']} "
+            f"({result['calibrated_pass_rate_percent']:.2f}%), "
             f"mode={result['scoring_mode']}, seq={result['sequence_count']}, bits={result['total_bits']}"
         )

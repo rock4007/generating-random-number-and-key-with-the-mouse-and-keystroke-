@@ -29,10 +29,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 import platform
+import secrets
 import sys
 import threading
 import time
@@ -52,6 +54,7 @@ from security import (
     validate_duration,
     validate_security_level,
     register_exception_handlers,
+    lookup_mac_address,
 )
 
 # ---------------------------------------------------------------------------
@@ -118,6 +121,12 @@ from advanced_security import (  # noqa: E402
     SystemIdentity,
     ThreatBlockedError,
 )
+from self_healing import (  # noqa: E402
+    SelfHealingConfig,
+    SelfHealingCryptoService,
+    SelfHealingError,
+    UnrecoverableSecurityError,
+)
 
 # ---------------------------------------------------------------------------
 # Backend detection
@@ -181,6 +190,29 @@ def _api_system_identity(
     )
 
 
+def _api_backup_identity(
+    *,
+    user_id: str,
+    session_id: str,
+    backup_device_secret_hex: str = "",
+) -> SystemIdentity | None:
+    """Build optional backup identity for self-healing failover."""
+
+    if not backup_device_secret_hex:
+        return None
+    try:
+        backup_secret = bytes.fromhex(backup_device_secret_hex)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="backup_device_secret_hex must be valid hex") from exc
+    if len(backup_secret) < 32:
+        raise HTTPException(status_code=422, detail="backup_device_secret_hex must encode at least 32 bytes")
+    return SystemIdentity.from_current_system(
+        user_id=user_id,
+        session_id=session_id,
+        device_secret=backup_secret,
+    )
+
+
 # ---------------------------------------------------------------------------
 # FastAPI application
 # ---------------------------------------------------------------------------
@@ -216,6 +248,34 @@ app.add_middleware(
 
 # Register exception handlers (prevent stack trace leaks)
 register_exception_handlers(app)
+
+
+_ghost_lock = threading.Lock()
+_ghost_keys: dict[str, dict[str, Any]] = {}
+_GHOST_MAX_TTL_SECONDS = 300
+
+
+def _fingerprint(data: bytes | bytearray, *, length: int = 16) -> str:
+    """Short non-secret fingerprint for logs, UI, and package metadata."""
+
+    return "fp:" + hashlib.sha256(bytes(data)).hexdigest()[:length]
+
+
+def _zeroize(buf: bytearray) -> None:
+    for index in range(len(buf)):
+        buf[index] = 0
+
+
+def _cleanup_expired_ghost_keys(now: float | None = None) -> None:
+    current = time.time() if now is None else now
+    expired: list[str] = []
+    with _ghost_lock:
+        for ghost_id, record in _ghost_keys.items():
+            if float(record["expires_at"]) <= current:
+                _zeroize(record["key"])
+                expired.append(ghost_id)
+        for ghost_id in expired:
+            del _ghost_keys[ghost_id]
 
 
 # ---------------------------------------------------------------------------
@@ -430,23 +490,60 @@ def get_encryption_info() -> dict[str, Any]:
     return encryption_info()
 
 
+class _EncryptMessageBody(BaseModel):
+    """POST body for /encrypt/message — keeps key_hex out of URLs and server logs."""
+    message: str
+    key_hex: str
+    label: str = ""
+
+
+class _DecryptMessageBody(BaseModel):
+    """POST body for /decrypt/message — keeps key_hex out of URLs and server logs."""
+    nonce_hex: str
+    ciphertext_hex: str
+    key_hex: str
+    associated_data_hex: str = ""
+
+
+class _GhostEncryptBody(BaseModel):
+    """POST body for /ghost/encrypt."""
+
+    message: str
+    label: str = "ghost-message"
+    ttl_seconds: int = 120
+
+
+class _GhostPackageBody(BaseModel):
+    """Portable ghost package for one-time API decrypt."""
+
+    version: int
+    ghost_id: str
+    algorithm: str
+    nonce_hex: str
+    ciphertext_hex: str
+    associated_data_hex: str = ""
+    key_fingerprint: str = ""
+
+
 @app.post("/encrypt/message", summary="Encrypt a text message with an existing key")
 def encrypt_message_endpoint(
     request: Request,
-    message: str = Query(..., description="Plaintext message to encrypt."),
-    key_hex: str = Query(..., description="Hex-encoded key (at least 64 hex chars = 32 bytes)."),
-    label: str = Query(default="", description="Optional label bound as AAD (associated data)."),
+    body: _EncryptMessageBody,
 ) -> dict[str, Any]:
     """Encrypt a message using AES-256-GCM with a previously generated key.
 
     Supply `key_hex` from a prior `/generate` call.
     The returned `nonce_hex` + `ciphertext_hex` + `associated_data_hex` are all
     needed to decrypt; store them together.
+
+    Security note: key_hex is accepted in the POST body only — never in query
+    params — so it cannot appear in server access logs, browser history, or
+    HTTP Referer headers.
     """
     client_ip = request.client.host if request.client else "unknown"
 
     try:
-        key_bytes = bytes.fromhex(key_hex)
+        key_bytes = bytes.fromhex(body.key_hex)
     except ValueError:
         threat_logger.log_threat("INVALID_INPUT", client_ip, "bad key_hex")
         raise HTTPException(status_code=422, detail="key_hex must be valid hexadecimal")
@@ -457,16 +554,16 @@ def encrypt_message_endpoint(
             detail=f"key_hex must be at least 64 hex characters (32 bytes); got {len(key_bytes)} bytes",
         )
 
-    aad = label.encode("utf-8") if label else b""
+    aad = body.label.encode("utf-8") if body.label else b""
     try:
-        encrypted = _encrypt_msg(key_bytes, message, associated_data=aad)
+        encrypted = _encrypt_msg(key_bytes, body.message, associated_data=aad)
     except Exception as exc:
         log.exception("Encryption failed")
         raise HTTPException(status_code=500, detail="Encryption failed") from exc
 
     result = message_to_dict(encrypted)
     result["algorithm"] = "AES-256-GCM"
-    result["plaintext_length_bytes"] = len(message.encode("utf-8"))
+    result["plaintext_length_bytes"] = len(body.message.encode("utf-8"))
     result["ciphertext_length_bytes"] = len(encrypted.ciphertext)
     return result
 
@@ -474,20 +571,20 @@ def encrypt_message_endpoint(
 @app.post("/decrypt/message", summary="Decrypt a message with an existing key")
 def decrypt_message_endpoint(
     request: Request,
-    nonce_hex: str = Query(..., description="Nonce hex from /encrypt/message."),
-    ciphertext_hex: str = Query(..., description="Ciphertext hex from /encrypt/message."),
-    key_hex: str = Query(..., description="Hex-encoded key used during encryption."),
-    associated_data_hex: str = Query(default="", description="AAD hex from /encrypt/message."),
+    body: _DecryptMessageBody,
 ) -> dict[str, Any]:
-    """Decrypt a message produced by /encrypt/message."""
+    """Decrypt a message produced by /encrypt/message.
+
+    Security note: key_hex is accepted in the POST body only.
+    """
     client_ip = request.client.host if request.client else "unknown"
 
     try:
-        key_bytes = bytes.fromhex(key_hex)
+        key_bytes = bytes.fromhex(body.key_hex)
         encrypted = message_from_dict({
-            "nonce_hex": nonce_hex,
-            "ciphertext_hex": ciphertext_hex,
-            "associated_data_hex": associated_data_hex,
+            "nonce_hex": body.nonce_hex,
+            "ciphertext_hex": body.ciphertext_hex,
+            "associated_data_hex": body.associated_data_hex,
         })
     except ValueError as exc:
         threat_logger.log_threat("INVALID_INPUT", client_ip, f"bad hex input: {exc}")
@@ -512,6 +609,195 @@ def decrypt_message_endpoint(
         "plaintext": plaintext_str,
         "plaintext_bytes_hex": plaintext_bytes.hex() if plaintext_str is None else None,
         "decrypted_length_bytes": len(plaintext_bytes),
+    }
+
+
+@app.get("/ghost/info", summary="Ghost handoff API details")
+def ghost_info() -> dict[str, Any]:
+    """Explain the portable one-time ghost handoff flow."""
+
+    _cleanup_expired_ghost_keys()
+    return {
+        "status": "ok",
+        "purpose": "Portable volunteer demo handoff for devices without SUMIT KEY installed.",
+        "flow": [
+            "POST /ghost/encrypt with plaintext to create a package.",
+            "Move the returned package to any other device.",
+            "POST /ghost/decrypt with that package to open it once.",
+            "The server zeroizes and deletes the ghost key after decrypt or expiry.",
+        ],
+        "security_boundary": (
+            "The receiver's random mouse movement cannot recreate the sender key. "
+            "The API holds a short-lived one-time key for this demo."
+        ),
+        "active_ghost_keys": len(_ghost_keys),
+        "max_ttl_seconds": _GHOST_MAX_TTL_SECONDS,
+    }
+
+
+@app.post("/ghost/encrypt", summary="Create a portable one-time ghost package")
+def ghost_encrypt_endpoint(
+    request: Request,
+    body: _GhostEncryptBody,
+) -> dict[str, Any]:
+    """Create a ghost package that can be opened once from any device.
+
+    The raw key is never returned. It is held in process memory, short-lived,
+    and zeroized/deleted after `/ghost/decrypt` succeeds or the TTL expires.
+    """
+
+    client_ip = request.client.host if request.client else "unknown"
+    _cleanup_expired_ghost_keys()
+
+    ttl = max(1, min(int(body.ttl_seconds), _GHOST_MAX_TTL_SECONDS))
+    key = os.urandom(32)
+    aad = json.dumps(
+        {
+            "label": body.label,
+            "mode": "ghost-api",
+            "created_at": time.time(),
+        },
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+    try:
+        encrypted = _encrypt_msg(key, body.message, associated_data=aad)
+    except Exception as exc:
+        threat_logger.log_threat("GHOST_ENCRYPT_FAILED", client_ip, type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Ghost encryption failed") from exc
+
+    ghost_id = secrets.token_urlsafe(24)
+    expires_at = time.time() + ttl
+    key_buffer = bytearray(key)
+    key_fp = _fingerprint(key_buffer)
+    with _ghost_lock:
+        _ghost_keys[ghost_id] = {
+            "key": key_buffer,
+            "expires_at": expires_at,
+            "created_at": time.time(),
+            "key_fingerprint": key_fp,
+        }
+
+    return {
+        "status": "ok",
+        "package": {
+            "version": 1,
+            "ghost_id": ghost_id,
+            "algorithm": "AES-256-GCM",
+            "nonce_hex": encrypted.nonce.hex(),
+            "ciphertext_hex": encrypted.ciphertext.hex(),
+            "associated_data_hex": encrypted.associated_data.hex(),
+            "key_fingerprint": key_fp,
+            "expires_at": expires_at,
+            "warning": "Demo only. The API can open this once while the ghost key is alive.",
+        },
+        "instructions": "Send package to /ghost/decrypt from any device. The key is cleared after first decrypt.",
+    }
+
+
+@app.post("/ghost/decrypt", summary="Open a ghost package once, then clear the key")
+def ghost_decrypt_endpoint(
+    request: Request,
+    body: _GhostPackageBody,
+) -> dict[str, Any]:
+    """Decrypt a ghost package once and immediately zeroize/delete its key."""
+
+    client_ip = request.client.host if request.client else "unknown"
+    _cleanup_expired_ghost_keys()
+
+    if body.version != 1 or body.algorithm != "AES-256-GCM":
+        raise HTTPException(status_code=422, detail="Unsupported ghost package")
+
+    with _ghost_lock:
+        record = _ghost_keys.pop(body.ghost_id, None)
+
+    if record is None:
+        threat_logger.log_threat("GHOST_KEY_MISSING", client_ip, body.ghost_id)
+        raise HTTPException(status_code=410, detail="Ghost key expired, missing, or already used")
+
+    key_buffer = record["key"]
+    if float(record["expires_at"]) <= time.time():
+        _zeroize(key_buffer)
+        raise HTTPException(status_code=410, detail="Ghost key expired")
+
+    try:
+        encrypted = message_from_dict(
+            {
+                "nonce_hex": body.nonce_hex,
+                "ciphertext_hex": body.ciphertext_hex,
+                "associated_data_hex": body.associated_data_hex,
+            }
+        )
+        plaintext_bytes = _decrypt_msg(bytes(key_buffer), encrypted)
+    except ValueError as exc:
+        threat_logger.log_threat("INVALID_GHOST_PACKAGE", client_ip, str(exc))
+        raise HTTPException(status_code=422, detail=f"Invalid ghost package: {exc}") from exc
+    except Exception as exc:
+        threat_logger.log_threat("GHOST_DECRYPT_FAILED", client_ip, type(exc).__name__)
+        raise HTTPException(status_code=400, detail="Ghost decrypt failed") from exc
+    finally:
+        _zeroize(key_buffer)
+
+    try:
+        plaintext_str = plaintext_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        plaintext_str = None
+
+    return {
+        "status": "ok",
+        "plaintext": plaintext_str,
+        "plaintext_bytes_hex": plaintext_bytes.hex() if plaintext_str is None else None,
+        "key_fingerprint": record["key_fingerprint"],
+        "ghost_key_status": "zeroized_and_deleted",
+        "decrypted_length_bytes": len(plaintext_bytes),
+    }
+
+
+@app.get("/ghost/status/{ghost_id}", summary="Check whether a ghost key is still alive")
+def ghost_status_endpoint(ghost_id: str) -> dict[str, Any]:
+    """Return ghost-key state without revealing key material."""
+
+    _cleanup_expired_ghost_keys()
+    with _ghost_lock:
+        record = _ghost_keys.get(ghost_id)
+        if record is None:
+            return {
+                "status": "gone",
+                "ghost_id": ghost_id,
+                "available": False,
+                "detail": "expired, revoked, missing, or already used",
+            }
+        return {
+            "status": "alive",
+            "ghost_id": ghost_id,
+            "available": True,
+            "key_fingerprint": record["key_fingerprint"],
+            "expires_at": record["expires_at"],
+            "seconds_remaining": max(0, round(float(record["expires_at"]) - time.time(), 3)),
+        }
+
+
+@app.post("/ghost/revoke/{ghost_id}", summary="Revoke and zeroize a ghost key")
+def ghost_revoke_endpoint(ghost_id: str) -> dict[str, Any]:
+    """Manually burn a ghost key before it is opened."""
+
+    _cleanup_expired_ghost_keys()
+    with _ghost_lock:
+        record = _ghost_keys.pop(ghost_id, None)
+    if record is None:
+        return {
+            "status": "gone",
+            "ghost_id": ghost_id,
+            "revoked": False,
+            "detail": "expired, revoked, missing, or already used",
+        }
+    _zeroize(record["key"])
+    return {
+        "status": "revoked",
+        "ghost_id": ghost_id,
+        "revoked": True,
+        "key_fingerprint": record["key_fingerprint"],
+        "ghost_key_status": "zeroized_and_deleted",
     }
 
 
@@ -671,6 +957,69 @@ def rotating_decrypt_message_endpoint(
         "plaintext_bytes_hex": plaintext.hex() if text is None else None,
         "decrypted_length_bytes": len(plaintext),
     }
+
+
+@app.post("/encrypt/self-healing-message", summary="Encrypt with self-healing rotating-key recovery")
+def self_healing_encrypt_message_endpoint(
+    request: Request,
+    message: str = Query(..., description="Plaintext message to encrypt."),
+    user_id: str = Query(..., min_length=1, description="Stable user/account id."),
+    session_id: str = Query(..., min_length=1, description="Stable session id."),
+    context: str = Query(default="message", description="AAD-bound message context."),
+    device_secret_hex: str = Query(default="", description="Primary 32+ byte hex device secret."),
+    backup_device_secret_hex: str = Query(default="", description="Optional backup 32+ byte hex device secret."),
+    operation_id: str = Query(default="", description="Optional caller-supplied idempotency/recovery id."),
+    message_id: str = Query(default="", description="Optional unique message id for replay detection."),
+    failed_otp_attempts: int = Query(default=0, ge=0, le=20),
+    nfc_required_but_missing: bool = Query(default=False),
+    max_retries: int = Query(default=2, ge=0, le=5),
+) -> dict[str, Any]:
+    """Encrypt with journaled recovery, retry, verification, and backup failover.
+
+    Recovery is fail-closed: real threat blocks, tamper failures, and identity
+    mismatches are returned as security stops instead of being bypassed.
+    """
+
+    client_ip = request.client.host if request.client else "unknown"
+    identity = _api_system_identity(
+        user_id=user_id,
+        session_id=session_id,
+        device_secret_hex=device_secret_hex,
+    )
+    backup_identity = _api_backup_identity(
+        user_id=user_id,
+        session_id=session_id,
+        backup_device_secret_hex=backup_device_secret_hex,
+    )
+    healer = SelfHealingCryptoService(
+        identity,
+        backup_identity=backup_identity,
+        config=SelfHealingConfig(max_retries=max_retries),
+    )
+
+    try:
+        result = healer.encrypt_message(
+            message,
+            context=context,
+            operation_id=operation_id or None,
+            message_id=message_id or None,
+            source_ip=client_ip,
+            failed_otp_attempts=failed_otp_attempts,
+            nfc_required_but_missing=nfc_required_but_missing,
+        )
+    except UnrecoverableSecurityError as exc:
+        threat_logger.log_threat("SELF_HEALING_SECURITY_STOP", client_ip, str(exc))
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except SelfHealingError as exc:
+        threat_logger.log_threat("SELF_HEALING_FAILED", client_ip, str(exc))
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    output = result.to_dict()
+    output["note"] = (
+        "Self-healing retried only transient faults. It did not bypass threat "
+        "blocks, AES-GCM verification, or identity checks."
+    )
+    return output
 
 
 @app.get("/debug/pipeline", summary="Debug the full pipeline with synthetic events")
@@ -1278,6 +1627,312 @@ def vault_serverless_endpoint(
     body = json.loads(result["body"])
     body["http_status"] = result["statusCode"]
     return body
+
+
+# ---------------------------------------------------------------------------
+# Quantum Ghost Session — two-device, presence-proof, burn-after-read
+# ---------------------------------------------------------------------------
+#
+# FLOW:
+#  [Receiver device — SETUP]
+#    POST /ghost/quantum/session
+#      → ML-KEM-1024 keypair generated (ek, dk)
+#      → dk stored in HighVoltageVault (burn_after_read, TTL=5min)
+#      → Returns: vault_id, session_secret_hex (share both with receiver
+#        out-of-band), ek_hex (public — give to sender)
+#
+#  [Sender device — ENCRYPT]
+#    POST /ghost/quantum/send
+#      Body: { ek_hex, message, mouse_events }
+#      → Sender moves mouse → entropy extracted
+#      → quantum_encrypt(ek, message, mouse_entropy) → QuantumSafePackage
+#      → Returns: package (share with receiver)
+#
+#  [Receiver device — DECRYPT + BURN]
+#    POST /ghost/quantum/receive
+#      Body: { vault_id, session_secret_hex, package, mouse_events }
+#      → Receiver moves mouse → proves physical presence
+#      → Vault releases dk using session_secret (burn_after_read BURNS it)
+#      → quantum_decrypt(dk, package) → plaintext
+#      → Ghost key is gone — cannot be reused
+#
+# Any MITM attempt triggers IP+MAC logging and BLOCK.
+
+_qs_vault: "HighVoltageVault | None" = None
+_qs_vault_lock = threading.Lock()
+
+
+def _get_qs_vault() -> "HighVoltageVault":
+    global _qs_vault
+    with _qs_vault_lock:
+        if _qs_vault is None:
+            _qs_vault = HighVoltageVault()
+    return _qs_vault
+
+
+class _QsSessionBody(BaseModel):
+    ttl_seconds: int = 300
+
+
+class _QsSendBody(BaseModel):
+    ek_hex: str
+    message: str
+    mouse_events: list[dict] = []
+    label: str = "ghost-message"
+
+
+class _QsReceiveBody(BaseModel):
+    vault_id: str
+    session_secret_hex: str
+    package: dict
+    mouse_events: list[dict] = []
+
+
+class _QsRevokeBody(BaseModel):
+    vault_id: str
+
+
+@app.post("/ghost/quantum/session", summary="Setup a quantum ghost session (receiver device)")
+def qs_session_endpoint(request: Request, body: _QsSessionBody) -> dict[str, Any]:
+    """Generate ML-KEM-1024 keypair; store dk in burn-after-read vault.
+
+    Call this on the RECEIVER device. Returns:
+    - ek_hex      — give to the sender (public)
+    - vault_id    — keep for /ghost/quantum/receive
+    - session_secret_hex — keep for /ghost/quantum/receive (authenticates vault access)
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    ttl = max(30, min(int(body.ttl_seconds), 600))
+
+    session = _quantum_keygen()
+    session_secret = os.urandom(32)
+
+    vault = _get_qs_vault()
+    dk_bytes = session.dk_bytes()
+
+    vault_id = vault.store(
+        dk_bytes,
+        master_password=session_secret,
+        n_shards=5,
+        threshold=3,
+        ttl_seconds=float(ttl),
+        burn_after_read=True,
+    )
+
+    expires_at = time.time() + ttl
+    log.info("Ghost quantum session created vault=%s from=%s ttl=%ds", vault_id[:8], client_ip, ttl)
+
+    return {
+        "status": "ok",
+        "vault_id": vault_id,
+        "session_secret_hex": session_secret.hex(),
+        "ek_hex": session.ek,
+        "expires_at": expires_at,
+        "ttl_seconds": ttl,
+        "instructions": {
+            "sender": "POST /ghost/quantum/send with ek_hex + message + mouse_events",
+            "receiver": "POST /ghost/quantum/receive with vault_id + session_secret_hex + package + mouse_events",
+        },
+        "warning": "Share vault_id+session_secret only with the intended receiver. dk is burn-after-read.",
+    }
+
+
+@app.post("/ghost/quantum/send", summary="Encrypt a message for a quantum ghost session (sender device)")
+def qs_send_endpoint(request: Request, body: _QsSendBody) -> dict[str, Any]:
+    """Encrypt a message using the receiver's ek + your mouse entropy.
+
+    Any device can send — only the receiver with the matching dk (in the vault)
+    can decrypt. The sender's mouse movement hardens the Argon2id layer inside
+    the quantum-safe package.
+    """
+    client_ip = request.client.host if request.client else "unknown"
+
+    try:
+        ek_bytes = bytes.fromhex(body.ek_hex)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="ek_hex must be valid hex")
+    if len(ek_bytes) != 1568:
+        raise HTTPException(status_code=422, detail="ek_hex must be 1568 bytes (ML-KEM-1024)")
+
+    from entropy_engine import extract_mouse_entropy
+    from key_generator import KeyGenerator, HKDFConfig, EntropyHealthError
+
+    if body.mouse_events:
+        raw_entropy = extract_mouse_entropy(body.mouse_events)
+    else:
+        raw_entropy = os.urandom(32)
+
+    try:
+        behavioural = KeyGenerator.generate_fresh_key(raw_entropy)
+    except EntropyHealthError:
+        behavioural = os.urandom(32)
+
+    try:
+        pkg = _quantum_encrypt(
+            body.ek_hex,
+            body.message,
+            behavioural,
+            associated_data=body.label.encode("utf-8"),
+        )
+    except Exception as exc:
+        threat_logger.log_threat("QS_ENCRYPT_FAILED", client_ip, type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Quantum encryption failed") from exc
+
+    pkg_dict = quantum_package_to_dict(pkg)
+    pkg_dict["label"] = body.label
+    pkg_dict["kem_fingerprint"] = hashlib.sha256(bytes.fromhex(pkg_dict["kem_ct_hex"])).hexdigest()[:16]
+
+    log.info("Ghost quantum send from=%s label=%s", client_ip, body.label)
+    return {
+        "status": "ok",
+        "package": pkg_dict,
+        "algorithm": "ML-KEM-1024 + Argon2id + AES-256-GCM (HKDF-SHA3-512)",
+        "instructions": "Send this package to the receiver — only the dk in their vault can decrypt it.",
+    }
+
+
+@app.post("/ghost/quantum/receive", summary="Decrypt a quantum ghost package (receiver device)")
+def qs_receive_endpoint(request: Request, body: _QsReceiveBody) -> dict[str, Any]:
+    """Prove physical presence via mouse entropy, release dk from vault, decrypt, burn.
+
+    After this call the dk is permanently destroyed — the ghost key is gone.
+    Any subsequent attempt to decrypt the same package will fail.
+    """
+    client_ip = request.client.host if request.client else "unknown"
+
+    from entropy_engine import extract_mouse_entropy
+    from key_generator import KeyGenerator, EntropyHealthError
+
+    # Presence proof — receiver must move mouse
+    if len(body.mouse_events) < 5:
+        threat_logger.log_threat(
+            "QS_NO_PRESENCE_PROOF", client_ip,
+            f"only {len(body.mouse_events)} mouse events (need ≥5)",
+        )
+        raise HTTPException(
+            status_code=422,
+            detail="Too few mouse events — move your mouse to prove physical presence",
+        )
+
+    try:
+        session_secret = bytes.fromhex(body.session_secret_hex)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="session_secret_hex must be valid hex")
+
+    vault = _get_qs_vault()
+
+    try:
+        dk_bytes = vault.retrieve(
+            body.vault_id,
+            shard_xs=[1, 2, 3],
+            master_password=session_secret,
+        )
+    except KeyError:
+        threat_logger.log_threat("QS_VAULT_MISS", client_ip, body.vault_id[:16])
+        mac = lookup_mac_address(client_ip)
+        log.warning("Ghost key not found. Attacker IP=%s MAC=%s", client_ip, mac)
+        raise HTTPException(status_code=410, detail="Ghost key expired, burned, or invalid vault_id")
+    except PermissionError as exc:
+        threat_logger.log_threat("QS_VAULT_DENIED", client_ip, str(exc)[:80])
+        mac = lookup_mac_address(client_ip)
+        log.warning("Ghost vault access denied. IP=%s MAC=%s reason=%s", client_ip, mac, exc)
+        raise HTTPException(status_code=403, detail=str(exc))
+
+    try:
+        pkg = quantum_package_from_dict(body.package)
+        plaintext_bytes = _quantum_decrypt(dk_bytes.hex(), pkg)
+    except Exception as exc:
+        threat_logger.log_threat("QS_DECRYPT_FAILED", client_ip, type(exc).__name__)
+        mac = lookup_mac_address(client_ip)
+        log.warning("Ghost decrypt failed — possible MITM. IP=%s MAC=%s", client_ip, mac)
+        raise HTTPException(
+            status_code=400,
+            detail="Decryption failed — package tampered or wrong session",
+        ) from exc
+
+    try:
+        plaintext = plaintext_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        plaintext = None
+
+    log.info("Ghost quantum received and burned vault=%s from=%s", body.vault_id[:8], client_ip)
+    return {
+        "status": "ok",
+        "plaintext": plaintext,
+        "plaintext_bytes_hex": plaintext_bytes.hex() if plaintext is None else None,
+        "ghost_key_status": "burned — key destroyed, cannot be reused",
+        "receiver_presence_events": len(body.mouse_events),
+    }
+
+
+@app.post("/ghost/quantum/revoke", summary="Destroy a quantum ghost key before it is used")
+def qs_revoke_endpoint(request: Request, body: _QsRevokeBody) -> dict[str, Any]:
+    """Emergency revoke — permanently destroys the dk in the vault."""
+    client_ip = request.client.host if request.client else "unknown"
+    vault = _get_qs_vault()
+    try:
+        vault.zeroize(body.vault_id)
+        log.info("Ghost key revoked vault=%s from=%s", body.vault_id[:8], client_ip)
+        return {"status": "revoked", "vault_id": body.vault_id, "ghost_key_status": "zeroized"}
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=f"Vault not found or already gone: {exc}") from exc
+
+
+# ---------------------------------------------------------------------------
+# Fallback auth assessment endpoint (used by browser extension)
+# ---------------------------------------------------------------------------
+
+class _FallbackAssessBody(BaseModel):
+    mouse_events: list[dict] = []
+    scenario: str = "extension-demo"
+    otp_destination: Optional[str] = None
+    provided_otp: Optional[str] = None
+    nfc_token_uid: Optional[str] = None
+
+
+@app.post("/fallback/assess", summary="Assess mouse quality and fallback chain status")
+def fallback_assess_endpoint(body: _FallbackAssessBody) -> dict[str, Any]:
+    """Used by the browser extension to show the fallback auth chain state."""
+    from fallback_auth import evaluate_mouse_movement, make_chess_like_mouse_events
+
+    events = body.mouse_events if body.mouse_events else []
+    profile = evaluate_mouse_movement(events)
+
+    return {
+        "mouse_verdict": profile.verdict,
+        "score": round(profile.score, 3),
+        "event_count": profile.event_count,
+        "authenticated": profile.verdict == "PASS",
+        "method": "mouse_movement" if profile.verdict == "PASS" else "none",
+        "otp_available": bool(body.otp_destination),
+        "nfc_available": bool(body.nfc_token_uid),
+        "reasons": list(profile.reasons),
+        "direction_changes": profile.direction_changes,
+        "micro_vibrations": profile.micro_vibration_steps,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Admin threats endpoint — IP + MAC of all detected attackers
+# ---------------------------------------------------------------------------
+
+@app.get("/admin/threats", summary="Admin: view all detected threats with IP and MAC")
+def admin_threats_endpoint(request: Request) -> dict[str, Any]:
+    """Return the full threat log including attacker IP and MAC address.
+
+    In production this endpoint must be protected by API key auth and served
+    only on an internal interface. In this demo it is open for volunteer review.
+    """
+    stats = threat_logger.get_stats()
+    return {
+        "total_threats": stats["total_threat_events"],
+        "blocked_ips": stats["blocked_ips"],
+        "threats": stats["recent_threats"],
+        "note": (
+            "MAC addresses are resolved from the local ARP cache. "
+            "They are only available for hosts on the same LAN segment."
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -9,23 +9,29 @@ Run with: python test_sandbox.py
 from __future__ import annotations
 
 import math
+import sys
 import time
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from entropy_engine import extract_mouse_entropy, extract_keystroke_entropy, pool_entropy
 from key_generator import KeyGenerator
 
 
-def test_mouse_entropy_extraction():
-    """Test mouse entropy extraction with synthetic movement data."""
-    print("\n[TEST] Mouse entropy extraction...")
+# ---------------------------------------------------------------------------
+# Shared helpers — called by multiple tests; NOT test functions themselves
+# ---------------------------------------------------------------------------
 
-    # Generate synthetic mouse events with varying velocity and direction
+def _make_mouse_entropy_bytes() -> bytes:
     events = []
     start_time = time.time()
     for i in range(20):
         x = 100 + i * 5 + math.sin(i * 0.5) * 10
         y = 200 + i * 3 + math.cos(i * 0.3) * 8
         t = start_time + i * 0.1
-
         velocity = 0.0
         direction = 0.0
         if events:
@@ -36,107 +42,87 @@ def test_mouse_entropy_extraction():
             if dt > 0:
                 velocity = math.sqrt(dx*dx + dy*dy) / dt
                 direction = math.degrees(math.atan2(dy, dx))
-
-        events.append({
-            'x': x,
-            'y': y,
-            'timestamp': t,
-            'velocity_px_per_s': velocity,
-            'direction_angle_deg': direction,
-        })
-
-    entropy_bytes = extract_mouse_entropy(events)
-    assert len(entropy_bytes) == 48, f"Expected 48 bytes, got {len(entropy_bytes)}"
-    assert entropy_bytes != b'\x00' * 48, "Entropy bytes should not be all zeros"
-
-    print(f"  ✓ Extracted {len(entropy_bytes)} bytes of mouse entropy")
-    return entropy_bytes
+        events.append({'x': x, 'y': y, 'timestamp': t,
+                       'velocity_px_per_s': velocity, 'direction_angle_deg': direction})
+    return extract_mouse_entropy(events)
 
 
-def test_keystroke_entropy_extraction():
-    """Test keystroke entropy extraction with synthetic timing data."""
-    print("\n[TEST] Keystroke entropy extraction...")
-
-    # Generate synthetic keystroke events with varying dwell/flight times
+def _make_keystroke_entropy_bytes() -> bytes:
     events = []
     start_time = time.time()
     keys = ['a', 'b', 'c', 'd', 'e']
     for i, key in enumerate(keys):
         press_time = start_time + i * 0.2 + (i % 2) * 0.05
         release_time = press_time + 0.1 + (i % 3) * 0.02
-
         flight_time = 0.0
         if events:
             flight_time = (press_time - events[-1]['release_timestamp']) * 1000
+        events.append({'key': key, 'press_timestamp': press_time,
+                       'release_timestamp': release_time,
+                       'dwell_time_ms': (release_time - press_time) * 1000,
+                       'flight_time_ms': flight_time})
+    return extract_keystroke_entropy(events)
 
-        events.append({
-            'key': key,
-            'press_timestamp': press_time,
-            'release_timestamp': release_time,
-            'dwell_time_ms': (release_time - press_time) * 1000,
-            'flight_time_ms': flight_time,
-        })
 
-    entropy_bytes = extract_keystroke_entropy(events)
+def _make_pooled_entropy() -> bytes:
+    return pool_entropy(_make_mouse_entropy_bytes(), _make_keystroke_entropy_bytes())
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+def test_mouse_entropy_extraction():
+    """Test mouse entropy extraction with synthetic movement data."""
+    print("\n[TEST] Mouse entropy extraction...")
+    entropy_bytes = _make_mouse_entropy_bytes()
+    assert len(entropy_bytes) == 48, f"Expected 48 bytes, got {len(entropy_bytes)}"
+    assert entropy_bytes != b'\x00' * 48, "Entropy bytes should not be all zeros"
+    print(f"  ✓ Extracted {len(entropy_bytes)} bytes of mouse entropy")
+
+
+def test_keystroke_entropy_extraction():
+    """Test keystroke entropy extraction with synthetic timing data."""
+    print("\n[TEST] Keystroke entropy extraction...")
+    entropy_bytes = _make_keystroke_entropy_bytes()
     assert len(entropy_bytes) > 0, "Keystroke entropy should not be empty"
-    assert entropy_bytes != b'', "Entropy bytes should not be empty"
-
     print(f"  ✓ Extracted {len(entropy_bytes)} bytes of keystroke entropy")
-    return entropy_bytes
 
 
 def test_entropy_pooling():
     """Test entropy pooling from mouse and keystroke sources."""
     print("\n[TEST] Entropy pooling...")
-
-    mouse_bytes = test_mouse_entropy_extraction()
-    keystroke_bytes = test_keystroke_entropy_extraction()
-
+    mouse_bytes = _make_mouse_entropy_bytes()
+    keystroke_bytes = _make_keystroke_entropy_bytes()
     pooled = pool_entropy(mouse_bytes, keystroke_bytes)
     assert len(pooled) == 32, f"Expected 32-byte SHA3-256 digest, got {len(pooled)}"
-
-    # Test that different inputs produce different outputs
     pooled2 = pool_entropy(mouse_bytes, b'different')
     assert pooled != pooled2, "Different inputs should produce different pooled entropy"
-
     print(f"  ✓ Pooled entropy: {pooled.hex()[:32]}...")
-    return pooled
 
 
 def test_key_derivation():
     """Test cryptographic key derivation from pooled entropy."""
     print("\n[TEST] Key derivation...")
-
-    pooled = test_entropy_pooling()
-
-    # Test standard key
+    pooled = _make_pooled_entropy()
     key_std = KeyGenerator.generate_key(pooled)
     assert len(key_std) == 32, f"Standard key should be 256 bits, got {len(key_std)*8} bits"
-
-    # Test quantum-hardened key
     key_quantum = KeyGenerator.generate_quantum_hardened_key(pooled)
     assert len(key_quantum) == 64, f"Quantum key should be 512 bits, got {len(key_quantum)*8} bits"
-
-    # Test that different entropy produces different keys
     key2 = KeyGenerator.generate_key(pooled + b'extra')
     assert key_std != key2, "Different entropy should produce different keys"
-
     print(f"  ✓ Standard key: {key_std.hex()[:32]}... ({len(key_std)*8} bits)")
-    print(f"  ✓ Quantum key: {key_quantum.hex()[:32]}... ({len(key_quantum)*8} bits)")
-    return key_std, key_quantum
+    print(f"  ✓ Quantum key:  {key_quantum.hex()[:32]}... ({len(key_quantum)*8} bits)")
 
 
 def test_quantum_binary_string():
     """Test that quantum hardened entropy produces a valid binary string."""
     print("\n[TEST] Quantum binary string generation...")
-
-    pooled = test_entropy_pooling()
+    pooled = _make_pooled_entropy()
     binary_string = KeyGenerator.generate_quantum_binary_string(pooled)
     assert len(binary_string) == 512, f"Expected 512 bit string, got {len(binary_string)}"
     assert set(binary_string) <= {"0", "1"}, "Binary string should contain only 0 and 1"
-
     print(f"  ✓ Generated {len(binary_string)}-bit quantum binary string")
-    return binary_string
 
 
 def test_deterministic_behavior():
@@ -179,7 +165,7 @@ def test_message_encryption_roundtrip():
     import os
     from crypto_tools import encrypt_message, decrypt_message, message_to_dict, message_from_dict
 
-    pooled = test_entropy_pooling()
+    pooled = _make_pooled_entropy()
     key = KeyGenerator.generate_quantum_hardened_key(pooled)
 
     plaintext = "Hello SUMIT KEY — AES-256-GCM test message!"
@@ -226,7 +212,7 @@ def test_file_encryption_roundtrip():
     from pathlib import Path
     from crypto_tools import encrypt_file, decrypt_file
 
-    pooled = test_entropy_pooling()
+    pooled = _make_pooled_entropy()
     key = KeyGenerator.generate_quantum_hardened_key(pooled)
 
     with tempfile.TemporaryDirectory() as tmpdir:

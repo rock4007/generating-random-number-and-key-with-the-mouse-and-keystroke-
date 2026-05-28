@@ -20,6 +20,7 @@ Usage in api.py:
 from __future__ import annotations
 
 import hashlib
+import hmac as _hmac_module
 import logging
 import os
 import time
@@ -42,7 +43,7 @@ class ThreatLogger:
     """Detects and logs security threats (brute force, malformed input, etc.)."""
 
     def __init__(self):
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.threat_events: list[dict[str, Any]] = []
         self.ip_violation_count: dict[str, int] = defaultdict(int)
         self.ip_last_threat: dict[str, float] = {}
@@ -51,12 +52,20 @@ class ThreatLogger:
         self.THREAT_WINDOW_SECONDS = 60
 
     def log_threat(self, threat_type: str, ip: str, details: str = "") -> None:
-        """Log a threat event and increment IP violation counter."""
+        """Log a threat event, resolve attacker MAC, and alert admin."""
+        # Resolve MAC outside the lock (may be slow)
+        try:
+            from security import lookup_mac_address
+            mac = lookup_mac_address(ip)
+        except Exception:
+            mac = "unknown"
+
         with self.lock:
             event = {
                 "timestamp": time.time(),
                 "type": threat_type,
                 "ip": ip,
+                "mac": mac,
                 "details": details,
             }
             self.threat_events.append(event)
@@ -64,7 +73,7 @@ class ThreatLogger:
             self.ip_last_threat[ip] = time.time()
 
             log.warning(
-                f"THREAT: {threat_type} from {ip} | {details} | "
+                f"THREAT: {threat_type} from {ip} (MAC:{mac}) | {details} | "
                 f"violations={self.ip_violation_count[ip]}"
             )
 
@@ -99,6 +108,10 @@ threat_logger = ThreatLogger()
 # 2. RATE LIMITING MIDDLEWARE
 # ============================================================================
 
+# Module-level reference set on first instantiation — used by test fixtures.
+_rate_limiter_instance: "RateLimitMiddleware | None" = None
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Enforce per-IP rate limits (e.g., 10 requests/minute, 30 per hour)."""
 
@@ -113,6 +126,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests_per_hour = requests_per_hour
         self.lock = threading.Lock()
         self.request_times: dict[str, list[float]] = defaultdict(list)
+        global _rate_limiter_instance
+        _rate_limiter_instance = self
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         client_ip = self._get_client_ip(request)
@@ -175,10 +190,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def _get_client_ip(request: Request) -> str:
-        """Extract real client IP (handles X-Forwarded-For, etc.)."""
-        if "x-forwarded-for" in request.headers:
+        """Extract real client IP.
+
+        Only trusts X-Forwarded-For when the TRUSTED_PROXY env var is set,
+        because any client can forge that header. Without a known proxy in
+        front, reading it lets attackers present any IP to bypass rate limits.
+        """
+        trusted_proxy = os.environ.get("TRUSTED_PROXY", "").strip()
+        direct_ip = request.client.host if request.client else "unknown"
+        if trusted_proxy and direct_ip == trusted_proxy and "x-forwarded-for" in request.headers:
             return request.headers["x-forwarded-for"].split(",")[0].strip()
-        return request.client.host if request.client else "unknown"
+        return direct_ip
 
 
 # ============================================================================
@@ -289,12 +311,16 @@ class APIKeyAuth:
         self.enabled = bool(self.expected_key)
 
     def verify(self, api_key: Optional[str]) -> bool:
-        """Return True if API key is valid (or auth disabled)."""
+        """Return True if API key is valid (or auth disabled).
+
+        Uses constant-time comparison to prevent timing-based key enumeration.
+        """
         if not self.enabled:
             return True
         if not api_key:
             return False
-        return hashlib.sha256(api_key.encode()).hexdigest() == self.expected_key
+        computed = hashlib.sha256(api_key.encode()).hexdigest()
+        return _hmac_module.compare_digest(computed, self.expected_key)
 
     def __call__(self, api_key: Optional[str] = None) -> bool:
         """Dependency injection for FastAPI."""
@@ -357,7 +383,68 @@ resource_limits = ResourceLimits(max_concurrent_captures=3)
 
 
 # ============================================================================
-# 7. EXCEPTION HANDLERS (No stack trace leaks)
+# 8. MAC ADDRESS RESOLUTION — attacker identification for admin alerts
+# ============================================================================
+
+import re
+import subprocess
+import uuid as _uuid_module
+import platform as _platform_module
+
+
+def lookup_mac_address(ip: str) -> str:
+    """Return the MAC address for a LAN IP from the OS ARP cache.
+
+    Only works for hosts on the same LAN segment.  Returns "unknown" for
+    remote IPs, loopback, or when ARP lookup fails.
+    """
+    if not ip or ip in ("unknown", "127.0.0.1", "::1", "localhost"):
+        # Loopback: return this machine's own MAC
+        raw = _uuid_module.getnode()
+        return ":".join(f"{(raw >> (8 * i)) & 0xFF:02x}" for i in reversed(range(6)))
+
+    system = _platform_module.system()
+    try:
+        if system == "Linux":
+            arp_table = _read_proc_arp()
+            mac = arp_table.get(ip)
+            if mac:
+                return mac
+            # Trigger ARP resolution, then re-read
+            subprocess.run(["ping", "-c", "1", "-W", "1", ip], capture_output=True, timeout=2)
+            arp_table = _read_proc_arp()
+            return arp_table.get(ip, "unknown")
+        else:
+            result = subprocess.run(["arp", "-n", ip], capture_output=True, text=True, timeout=3)
+            return _parse_arp_output(result.stdout) or "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _read_proc_arp() -> dict[str, str]:
+    """Parse /proc/net/arp into {ip: mac} dict (Linux only)."""
+    table: dict[str, str] = {}
+    try:
+        with open("/proc/net/arp", encoding="utf-8") as f:
+            next(f)  # skip header
+            for line in f:
+                parts = line.split()
+                if len(parts) >= 4 and parts[2] != "0x0":
+                    table[parts[0]] = parts[3]
+    except OSError:
+        pass
+    return table
+
+
+def _parse_arp_output(text: str) -> str:
+    """Extract a MAC from arp -n output (cross-platform fallback)."""
+    mac_pattern = re.compile(r"([0-9a-fA-F]{2}[:\-]){5}[0-9a-fA-F]{2}")
+    m = mac_pattern.search(text)
+    return m.group(0).replace("-", ":").lower() if m else ""
+
+
+# ============================================================================
+# 9. EXCEPTION HANDLERS (No stack trace leaks)
 # ============================================================================
 
 def register_exception_handlers(app: FastAPI) -> None:
