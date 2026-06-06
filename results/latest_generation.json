@@ -1,9 +1,0 @@
-{
-  "capture_duration_seconds": 2.0,
-  "mouse_event_count": 40,
-  "keystroke_event_count": 20,
-  "security_level": "quantum",
-  "random_number": 16224902480225592605,
-  "key_hex": "bc6c00c6a6ff163ed1368184f8dd10252fc99c9dc9408530d659942e1ff80c00855866081410f388f1e777fd6c77f5e21299e428ddaaee59883af89113491b7d",
-  "key_bits": 512
-}

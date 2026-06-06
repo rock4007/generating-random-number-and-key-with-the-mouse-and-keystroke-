@@ -1,10 +1,17 @@
+# ── Python runtime ────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.so
 .venv/
 venv/
+env/
+*.egg-info/
+dist/
+build/
 
-# Secrets and credentials — NEVER commit these
+# ── Secrets and credentials — NEVER commit ────────────────────────────────────
 .env
 .env.*
 *.key
@@ -14,15 +21,30 @@ venv/
 secrets/
 credentials.json
 service_account.json
+*_token*
+*_secret*
 
-# Generated binary key material
+# ── Key material and generated output ─────────────────────────────────────────
+# JSON result files may contain raw key_hex — kept local only
+results/*.json
 results/*.bin
 results/*.key
-dist/
 
-# IDE and OS noise
-.DS_Store
+# ── Internal tool config (Codespaces / agent / IDE) ───────────────────────────
+.agents/
+.claude/
+.codex/
+.netlify/
 .idea/
 .vscode/
+.DS_Store
 *.swp
 *~
+
+# ── Test and cache artefacts ──────────────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
