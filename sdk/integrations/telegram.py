@@ -1,35 +1,74 @@
-"""Telegram integration example.
+"""Telegram integration — individual user identities.
 
-Telegram stores messages on its servers. With SUMIT KEY,
-the Telegram server only ever sees an encrypted envelope.
-End-to-end encryption on top of Telegram's own TLS layer.
+Each Telegram user has their own UserIdentity tied to their @username.
+Group conversations use separate Channel objects per participant pair.
 
 Usage:
-    python sdk/integrations/telegram.py
+    python -m sdk.integrations.telegram
 """
 
-from sdk import SumitKey
+from sdk.identity import UserIdentity
 
-sk = SumitKey()
+# ── Individual Telegram identities ───────────────────────────────────────────
 
-# Shared key (exchanged once via QR code or separate channel)
-shared_key = sk.new_key()
+alice = UserIdentity("@alice_tg",   platform="telegram", display_name="Alice")
+bob   = UserIdentity("@bob_tg",     platform="telegram", display_name="Bob")
+carol = UserIdentity("@carol_tg",   platform="telegram", display_name="Carol")
 
-# Encrypt a group of messages
-messages = [
+print("=== Telegram Identities ===")
+for user in (alice, bob, carol):
+    print(f"  {user.display_name:6s}  {user.public_id()}  {user.identity_hash()}")
+print()
+
+# ── Alice ↔ Bob private channel ───────────────────────────────────────────────
+secret_ab = alice.new_shared_secret()
+ch_alice_bob = alice.channel_to(bob.public_id(),   shared_secret=secret_ab)
+ch_bob_alice = bob.channel_to(alice.public_id(),   shared_secret=secret_ab)
+
+print("=== Alice ↔ Bob private channel ===")
+print(f"Channel : {ch_alice_bob.channel_id()}")
+
+messages_ab = [
     "The project deadline is Friday.",
     "Password for the shared folder: see the encrypted file.",
     "Call me on Signal when you're ready.",
 ]
+for msg in messages_ab:
+    env = ch_alice_bob.encrypt(msg)
+    out = ch_bob_alice.decrypt(env)
+    print(f"  Alice → Bob : {msg}")
+    print(f"  Bob decrypts: {out}")
+    assert out == msg
+print()
 
-print("=== Sender side (before Telegram send) ===")
-envelopes = []
-for msg in messages:
-    env = sk.encrypt_text(msg, shared_key, context="telegram")
-    envelopes.append(env)
-    print(f"  Original : {msg}")
-    print(f"  Encrypted: {env[:80]}...\n")
+# ── Bob ↔ Carol private channel (separate key from Alice↔Bob) ────────────────
+secret_bc = bob.new_shared_secret()
+ch_bob_carol  = bob.channel_to(carol.public_id(),  shared_secret=secret_bc)
+ch_carol_bob  = carol.channel_to(bob.public_id(),  shared_secret=secret_bc)
 
-print("=== Receiver side (after Telegram receive) ===")
-for env in envelopes:
-    print(" ", sk.decrypt_text(env, shared_key))
+print("=== Bob ↔ Carol private channel ===")
+print(f"Channel : {ch_bob_carol.channel_id()}")
+env_bc = ch_bob_carol.encrypt("Don't tell Alice about the surprise party.")
+print(f"  Bob → Carol  : {ch_carol_bob.decrypt(env_bc)}")
+print()
+
+# ── Alice cannot read Bob↔Carol messages ─────────────────────────────────────
+try:
+    ch_alice_carol_fake = alice.channel_to(carol.public_id(), shared_secret=secret_bc)
+    ch_alice_carol_fake.decrypt(env_bc)
+    print("ERROR: Alice should not be able to read Bob→Carol!")
+except Exception:
+    print("Security: Alice cannot read Bob↔Carol channel ✓")
+
+# ── Platform isolation: same secret, different platform → different key ───────
+alice_wa = UserIdentity("@alice_tg", platform="whatsapp", display_name="Alice WA")
+secret_same = alice.new_shared_secret()
+ch_tg = alice.channel_to(bob.public_id(),    shared_secret=secret_same)
+ch_wa = alice_wa.channel_to(bob.public_id(), shared_secret=secret_same)
+
+env_tg = ch_tg.encrypt("telegram only message")
+try:
+    ch_wa.decrypt(env_tg)
+    print("ERROR: WhatsApp channel should not decrypt Telegram envelope!")
+except Exception:
+    print("Security: Telegram envelope cannot be replayed on WhatsApp ✓")
