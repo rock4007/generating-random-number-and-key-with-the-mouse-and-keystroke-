@@ -310,6 +310,7 @@ def generate(
     duration: float = Query(default=10.0, description="Capture duration in seconds (1-60)."),
     security_level: str = Query(default="quantum", description="'quantum' (512-bit) or 'standard' (256-bit)."),
     debug: bool = Query(default=False, description="Include debug metrics."),
+    include_key: bool = Query(default=False, description="Return full key_hex in response (opt-in; omit for production)."),
 ) -> dict[str, Any]:
     """
     Run the entropy capture pipeline and return a random number + cryptographic key.
@@ -366,15 +367,21 @@ def generate(
         result["key_bits"], result["mouse_event_count"], elapsed,
     )
 
+    key_fp = result.get("key_fingerprint") or _fingerprint(bytes.fromhex(result["key_hex"]))
     response: dict[str, Any] = {
         "status": "ok",
         "random_number": result["random_number"],
-        "key_hex": result["key_hex"],
+        "key_fingerprint": key_fp,
         "key_bits": result["key_bits"],
         "security_level": result["security_level"],
         "mouse_event_count": result["mouse_event_count"],
         "keystroke_event_count": result["keystroke_event_count"],
     }
+
+    # Full key returned only when the caller explicitly opts in.
+    # Never include key_hex in logs regardless.
+    if include_key:
+        response["key_hex"] = result["key_hex"]
 
     if debug:
         response["debug"] = {
@@ -887,17 +894,22 @@ def generate_and_encrypt(
     aad = body.label.encode("utf-8") if body.label else b""
     encrypted = _encrypt_msg(key_bytes, body.message, associated_data=aad)
     enc_dict = message_to_dict(encrypted)
-
+    key_fp = gen_result.get("key_fingerprint") or _fingerprint(key_bytes)
+    # key_hex is intentionally returned here — the caller must store it to
+    # decrypt later.  It is never logged.  Treat the response as a secret.
+    log.info("generate-and-encrypt for %s: %d-bit key fp=%s", client_ip, gen_result["key_bits"], key_fp)
     return {
         "status": "ok",
         "security_level": security_level,
         "key_hex": gen_result["key_hex"],
+        "key_fingerprint": key_fp,
         "key_bits": gen_result["key_bits"],
         "random_number": gen_result["random_number"],
         "mouse_event_count": gen_result["mouse_event_count"],
         "keystroke_event_count": gen_result["keystroke_event_count"],
         "encrypted_message": enc_dict,
         "algorithm": "AES-256-GCM",
+        "security_warning": "Treat key_hex as a secret — store it securely and never log it.",
         "note": "Store key_hex and encrypted_message together to decrypt later via /decrypt/message",
     }
 

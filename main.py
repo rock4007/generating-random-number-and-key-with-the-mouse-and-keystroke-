@@ -81,6 +81,7 @@ def generate_random_number_and_key(
 
     random_number = _derive_random_number_from_key(key_bytes)
     binary_output = _bytes_to_binary_string(key_bytes)
+    key_fp = "fp:" + hashlib.sha256(key_bytes).hexdigest()[:16]
 
     output = {
         "capture_duration_seconds": float(capture_duration_seconds),
@@ -91,16 +92,21 @@ def generate_random_number_and_key(
         "key_hex": key_bytes.hex(),
         "binary_output": binary_output,
         "key_bits": len(key_bytes) * 8,
+        "key_fingerprint": key_fp,
     }
 
+    # Save a redacted copy — full key_hex and binary_output are kept only
+    # in the in-memory return value, never written to disk.
+    saved = {k: v for k, v in output.items() if k not in ("key_hex", "binary_output")}
     results_path = Path("results") / "latest_generation.json"
     results_path.parent.mkdir(parents=True, exist_ok=True)
-    results_path.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
+    results_path.write_text(json.dumps(saved, indent=2) + "\n", encoding="utf-8")
 
     print("Random number generated:", output["random_number"])
     print("Security level:", output["security_level"])
-    print(f"Cryptographic key ({output['key_bits']}-bit, hex):", output["key_hex"])
-    print("Saved generation output to results/latest_generation.json")
+    print(f"Cryptographic key ({output['key_bits']}-bit) fingerprint:", key_fp)
+    print("  Full key available in return value — not printed to stdout.")
+    print("Saved generation output (key omitted) to results/latest_generation.json")
 
     return output
 
@@ -202,6 +208,7 @@ def generate_per_mouse_movement_outputs(
 
         random_number = _derive_random_number_from_key(key_bytes)
         binary_output = _bytes_to_binary_string(key_bytes)
+        key_fp = "fp:" + hashlib.sha256(key_bytes).hexdigest()[:16]
         per_move_outputs.append(
             {
                 "move_index": idx,
@@ -209,11 +216,18 @@ def generate_per_mouse_movement_outputs(
                 "random_number": random_number,
                 "binary_output": binary_output,
                 "encryption_key_hex": key_bytes.hex(),
+                "key_fingerprint": key_fp,
                 "key_bits": len(key_bytes) * 8,
                 "security_level": security_level,
             }
         )
 
+    # Saved copy strips encryption_key_hex and binary_output — key material
+    # stays only in the in-memory return value, never persisted to disk.
+    saved_outputs = [
+        {k: v for k, v in rec.items() if k not in ("encryption_key_hex", "binary_output")}
+        for rec in per_move_outputs
+    ]
     output = {
         "capture_duration_seconds": float(capture_duration_seconds),
         "mouse_event_count": len(mouse_events),
@@ -223,12 +237,13 @@ def generate_per_mouse_movement_outputs(
         "outputs": per_move_outputs,
     }
 
+    saved = {**output, "outputs": saved_outputs}
     results_path = Path("results") / "per_move_generation.json"
     results_path.parent.mkdir(parents=True, exist_ok=True)
-    results_path.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
+    results_path.write_text(json.dumps(saved, indent=2) + "\n", encoding="utf-8")
 
     print(f"Generated {len(per_move_outputs)} keys (one per mouse movement)")
-    print("Saved per-movement output to results/per_move_generation.json")
+    print("Saved per-movement output (keys omitted) to results/per_move_generation.json")
     return output
 
 
