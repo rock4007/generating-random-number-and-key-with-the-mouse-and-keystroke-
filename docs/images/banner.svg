@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 200" width="960" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0d1117"/>
+      <stop offset="45%"  stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#58a6ff"/>
+      <stop offset="25%"  stop-color="#a371f7"/>
+      <stop offset="55%"  stop-color="#ff7eb6"/>
+      <stop offset="80%"  stop-color="#f78166"/>
+      <stop offset="100%" stop-color="#3fb950"/>
+    </linearGradient>
+    <linearGradient id="leftPanel" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="rightPanel" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="clip">
+      <rect width="960" height="200" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#clip)">
+
+    <!-- Base background -->
+    <rect width="960" height="200" fill="url(#bg)"/>
+
+    <!-- Top radial glow -->
+    <ellipse cx="480" cy="-10" rx="420" ry="130" fill="#58a6ff" fill-opacity="0.04"/>
+
+    <!-- Subtle horizontal rules -->
+    <line x1="0" y1="50"  x2="960" y2="50"  stroke="#ffffff" stroke-opacity="0.025" stroke-width="1"/>
+    <line x1="0" y1="100" x2="960" y2="100" stroke="#ffffff" stroke-opacity="0.025" stroke-width="1"/>
+    <line x1="0" y1="150" x2="960" y2="150" stroke="#ffffff" stroke-opacity="0.025" stroke-width="1"/>
+
+    <!-- ── LEFT PANEL (key icon + mouse trail) ── -->
+    <rect x="0" y="0" width="186" height="195" fill="url(#leftPanel)"/>
+    <line x1="186" y1="0" x2="186" y2="195" stroke="#21262d" stroke-width="1"/>
+
+    <!-- Outer ring -->
+    <circle cx="93" cy="97" r="62" fill="none" stroke="#21262d" stroke-width="1.5"/>
+    <!-- Inner circle background -->
+    <circle cx="93" cy="97" r="54" fill="#0d1117"/>
+    <!-- Key icon -->
+    <text x="93" y="116" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif" font-size="44">🔑</text>
+
+    <!-- Mouse trajectory dots (clockwise around icon) -->
+    <circle cx="44" cy="52" r="3.5" fill="#58a6ff" fill-opacity="0.85" filter="url(#softglow)"/>
+    <circle cx="28" cy="80"  r="2.8" fill="#a371f7" fill-opacity="0.75"/>
+    <circle cx="32" cy="112" r="3.5" fill="#ff7eb6" fill-opacity="0.85" filter="url(#softglow)"/>
+    <circle cx="52" cy="136" r="2.8" fill="#3fb950" fill-opacity="0.75"/>
+    <circle cx="80" cy="148" r="3"   fill="#58a6ff" fill-opacity="0.6"/>
+    <circle cx="150" cy="44" r="2.8" fill="#3fb950" fill-opacity="0.7"/>
+    <circle cx="164" cy="72" r="3.5" fill="#58a6ff" fill-opacity="0.8" filter="url(#softglow)"/>
+    <circle cx="160" cy="104" r="2.8" fill="#f78166" fill-opacity="0.75"/>
+    <circle cx="144" cy="130" r="3"  fill="#a371f7" fill-opacity="0.7"/>
+
+    <!-- Trajectory lines -->
+    <polyline points="44,52 28,80 32,112 52,136 80,148"
+      fill="none" stroke="#58a6ff" stroke-opacity="0.2" stroke-width="1.5" stroke-dasharray="3,3"/>
+    <polyline points="150,44 164,72 160,104 144,130"
+      fill="none" stroke="#a371f7" stroke-opacity="0.2" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+    <!-- Keystroke pulse rings -->
+    <circle cx="93" cy="97" r="70" fill="none" stroke="#58a6ff" stroke-opacity="0.08" stroke-width="1"/>
+    <circle cx="93" cy="97" r="78" fill="none" stroke="#a371f7" stroke-opacity="0.05" stroke-width="1"/>
+
+    <!-- ── CENTRE: Title + tagline ── -->
+    <!-- Title glow layer -->
+    <text x="480" y="84" text-anchor="middle"
+      font-family="Arial Black, Arial, Helvetica, sans-serif"
+      font-size="58" font-weight="900" fill="#58a6ff" fill-opacity="0.15"
+      letter-spacing="-2">SUMIT KEY</text>
+    <!-- Title -->
+    <text x="480" y="82" text-anchor="middle"
+      font-family="Arial Black, Arial, Helvetica, sans-serif"
+      font-size="56" font-weight="900" fill="#e6edf3"
+      letter-spacing="-2">SUMIT KEY</text>
+
+    <!-- Tagline -->
+    <text x="480" y="112" text-anchor="middle"
+      font-family="Arial, Helvetica, sans-serif"
+      font-size="15" fill="#58a6ff" font-weight="600"
+      letter-spacing="0.3">Behavioural Entropy  ·  Per-User Identity  ·  End-to-End Encryption</text>
+
+    <!-- Sub-tagline -->
+    <text x="480" y="135" text-anchor="middle"
+      font-family="Arial, Helvetica, sans-serif"
+      font-size="12.5" fill="#7d8590">
+      AES-256-GCM  ·  ML-KEM-1024 FIPS 203  ·  6 Platform Integrations  ·  318 Tests Passing
+    </text>
+
+    <!-- Spec pills row -->
+    <!-- AES pill -->
+    <rect x="242" y="152" width="96" height="22" rx="11" fill="#0ea5e91a" stroke="#0ea5e944" stroke-width="1"/>
+    <text x="290" y="167" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="#38bdf8">&#x1F512; AES-256-GCM</text>
+    <!-- ML-KEM pill -->
+    <rect x="346" y="152" width="106" height="22" rx="11" fill="#7c3aed1a" stroke="#7c3aed44" stroke-width="1"/>
+    <text x="399" y="167" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="#a371f7">&#x269B;&#xFE0F; ML-KEM-1024</text>
+    <!-- Identity pill -->
+    <rect x="460" y="152" width="92" height="22" rx="11" fill="#e11d481a" stroke="#e11d4844" stroke-width="1"/>
+    <text x="506" y="167" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="#fb7185">&#x1F9EC; Per-User ID</text>
+    <!-- Tests pill -->
+    <rect x="560" y="152" width="84" height="22" rx="11" fill="#22c55e1a" stroke="#22c55e44" stroke-width="1"/>
+    <text x="602" y="167" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="#4ade80">&#x2705; 318 Tests</text>
+    <!-- ZKP pill -->
+    <rect x="652" y="152" width="80" height="22" rx="11" fill="#f596001a" stroke="#f5960044" stroke-width="1"/>
+    <text x="692" y="167" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="#fb923c">&#x1F510; ZKP Vault</text>
+
+    <!-- ── RIGHT PANEL (platform icons 3×3) ── -->
+    <rect x="774" y="0" width="186" height="195" fill="url(#rightPanel)"/>
+    <line x1="774" y1="0" x2="774" y2="195" stroke="#21262d" stroke-width="1"/>
+
+    <!-- "6 PLATFORMS" label -->
+    <text x="860" y="26" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="#7d8590" letter-spacing="0.08em">6 PLATFORMS</text>
+
+    <!-- Row 1: WhatsApp Telegram Gmail -->
+    <rect x="788" y="32" width="40" height="40" rx="9" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+    <text x="808" y="58" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F4AC;</text>
+
+    <rect x="836" y="32" width="40" height="40" rx="9" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+    <text x="856" y="58" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x2708;&#xFE0F;</text>
+
+    <rect x="884" y="32" width="40" height="40" rx="9" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+    <text x="904" y="58" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F4E7;</text>
+
+    <!-- Row 2: Drive Instagram Twitter -->
+    <rect x="788" y="80" width="40" height="40" rx="9" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+    <text x="808" y="106" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F5C2;&#xFE0F;</text>
+
+    <rect x="836" y="80" width="40" height="40" rx="9" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+    <text x="856" y="106" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F4F8;</text>
+
+    <rect x="884" y="80" width="40" height="40" rx="9" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+    <text x="904" y="106" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F426;</text>
+
+    <!-- Row 3: Lock Quantum Shield -->
+    <rect x="788" y="128" width="40" height="40" rx="9" fill="#0d1117" stroke="#3fb95033" stroke-width="1"/>
+    <text x="808" y="154" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F512;</text>
+
+    <rect x="836" y="128" width="40" height="40" rx="9" fill="#0d1117" stroke="#a371f733" stroke-width="1"/>
+    <text x="856" y="154" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x269B;&#xFE0F;</text>
+
+    <rect x="884" y="128" width="40" height="40" rx="9" fill="#0d1117" stroke="#58a6ff33" stroke-width="1"/>
+    <text x="904" y="154" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F6E1;&#xFE0F;</text>
+
+    <!-- Bottom accent bar -->
+    <rect x="0" y="194" width="960" height="6" fill="url(#bar)"/>
+
+  </g>
+</svg>

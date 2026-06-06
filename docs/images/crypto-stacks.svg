@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 210" width="960" height="210">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <clipPath id="clip">
+      <rect width="960" height="210" rx="12"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <rect width="960" height="210" fill="url(#bg)"/>
+
+    <!-- Section title -->
+    <text x="480" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#7d8590" letter-spacing="0.08em">CRYPTOGRAPHIC STACKS</text>
+
+    <!-- ── STACK A — AES-256-GCM (blue) ── -->
+    <rect x="18" y="40" width="220" height="152" rx="10" fill="#161b22" stroke="#58a6ff" stroke-width="2" filter="url(#shadow)"/>
+    <!-- Header band -->
+    <rect x="18" y="40" width="220" height="40" rx="10" fill="#58a6ff22"/>
+    <rect x="18" y="66" width="220" height="14" fill="#58a6ff22"/>
+    <text x="128" y="66" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="16">&#x1F512;</text>
+    <text x="152" y="66" text-anchor="start" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#58a6ff"> Stack A</text>
+    <text x="128" y="84" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#58a6ff">AES-256-GCM Classical</text>
+    <!-- Details -->
+    <text x="34" y="106" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Cipher</text>
+    <text x="200" y="106" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">AES-256-GCM</text>
+    <line x1="34" y1="111" x2="220" y2="111" stroke="#21262d" stroke-width="1"/>
+    <text x="34" y="126" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Key derivation</text>
+    <text x="200" y="126" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">HKDF-SHA3-256</text>
+    <line x1="34" y1="131" x2="220" y2="131" stroke="#21262d" stroke-width="1"/>
+    <text x="34" y="146" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Nonce</text>
+    <text x="200" y="146" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">96-bit os.urandom</text>
+    <line x1="34" y1="151" x2="220" y2="151" stroke="#21262d" stroke-width="1"/>
+    <text x="34" y="166" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Auth tag</text>
+    <text x="200" y="166" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">128-bit GCM</text>
+    <!-- Security level -->
+    <rect x="34" y="176" width="186" height="20" rx="6" fill="#58a6ff1a" stroke="#58a6ff33"/>
+    <text x="127" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#58a6ff">256-bit classical · 128-bit post-quantum</text>
+
+    <!-- ── STACK B — ML-KEM-1024 (orange) ── -->
+    <rect x="252" y="40" width="220" height="152" rx="10" fill="#161b22" stroke="#f78166" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="252" y="40" width="220" height="40" rx="10" fill="#f7816622"/>
+    <rect x="252" y="66" width="220" height="14" fill="#f7816622"/>
+    <text x="362" y="66" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="16">&#x269B;&#xFE0F;</text>
+    <text x="380" y="66" text-anchor="start" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#f78166"> Stack B</text>
+    <text x="362" y="84" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#f78166">ML-KEM-1024 Quantum-safe</text>
+    <!-- Details -->
+    <text x="268" y="106" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">KEM</text>
+    <text x="462" y="106" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">ML-KEM-1024</text>
+    <line x1="268" y1="111" x2="462" y2="111" stroke="#21262d" stroke-width="1"/>
+    <text x="268" y="126" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Standard</text>
+    <text x="462" y="126" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">NIST FIPS 203</text>
+    <line x1="268" y1="131" x2="462" y2="131" stroke="#21262d" stroke-width="1"/>
+    <text x="268" y="146" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Hardening</text>
+    <text x="462" y="146" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">Argon2id 64 MB</text>
+    <line x1="268" y1="151" x2="462" y2="151" stroke="#21262d" stroke-width="1"/>
+    <text x="268" y="166" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Session key</text>
+    <text x="462" y="166" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">HKDF-SHA3-512</text>
+    <rect x="268" y="176" width="186" height="20" rx="6" fill="#f786661a" stroke="#f7816633"/>
+    <text x="361" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#f78166">256-bit classical · 128-bit post-quantum</text>
+
+    <!-- ── STACK C — ZKP + Vault (pink) ── -->
+    <rect x="486" y="40" width="220" height="152" rx="10" fill="#161b22" stroke="#ff7eb6" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="486" y="40" width="220" height="40" rx="10" fill="#ff7eb622"/>
+    <rect x="486" y="66" width="220" height="14" fill="#ff7eb622"/>
+    <text x="596" y="66" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="16">&#x1F510;</text>
+    <text x="614" y="66" text-anchor="start" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#ff7eb6"> Stack C</text>
+    <text x="596" y="84" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#ff7eb6">ZKP + Vault + MITM</text>
+    <!-- Details -->
+    <text x="502" y="106" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">ZKP</text>
+    <text x="696" y="106" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">Schnorr/Fiat-Shamir</text>
+    <line x1="502" y1="111" x2="696" y2="111" stroke="#21262d" stroke-width="1"/>
+    <text x="502" y="126" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Shares</text>
+    <text x="696" y="126" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">Shamir SSS GF(2&#x2078;)</text>
+    <line x1="502" y1="131" x2="696" y2="131" stroke="#21262d" stroke-width="1"/>
+    <text x="502" y="146" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Vault</text>
+    <text x="696" y="146" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">burn-after-read TTL</text>
+    <line x1="502" y1="151" x2="696" y2="151" stroke="#21262d" stroke-width="1"/>
+    <text x="502" y="166" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Wire</text>
+    <text x="696" y="166" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">HMAC-SHA3-512</text>
+    <rect x="502" y="176" width="186" height="20" rx="6" fill="#ff7eb61a" stroke="#ff7eb633"/>
+    <text x="595" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#ff7eb6">Info-theoretic · 2048-bit DL · replay-proof</text>
+
+    <!-- ── STACK D — Rotating Keys (yellow) ── -->
+    <rect x="720" y="40" width="222" height="152" rx="10" fill="#161b22" stroke="#d29922" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="720" y="40" width="222" height="40" rx="10" fill="#d2992222"/>
+    <rect x="720" y="66" width="222" height="14" fill="#d2992222"/>
+    <text x="830" y="66" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="16">&#x1F504;</text>
+    <text x="848" y="66" text-anchor="start" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#d29922"> Stack D</text>
+    <text x="830" y="84" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#d29922">Rotating Keys</text>
+    <!-- Details -->
+    <text x="736" y="106" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Rotation epoch</text>
+    <text x="934" y="106" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">0.3 seconds</text>
+    <line x1="736" y1="111" x2="934" y2="111" stroke="#21262d" stroke-width="1"/>
+    <text x="736" y="126" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Identity binding</text>
+    <text x="934" y="126" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">user+session+device</text>
+    <line x1="736" y1="131" x2="934" y2="131" stroke="#21262d" stroke-width="1"/>
+    <text x="736" y="146" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Threat engine</text>
+    <text x="934" y="146" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">blocks pre-derivation</text>
+    <line x1="736" y1="151" x2="934" y2="151" stroke="#21262d" stroke-width="1"/>
+    <text x="736" y="166" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">Recovery</text>
+    <text x="934" y="166" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#e6edf3">self-healing failover</text>
+    <rect x="736" y="176" width="186" height="20" rx="6" fill="#d299221a" stroke="#d2992233"/>
+    <text x="829" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#d29922">256-bit · replay-blocked · brute-force resistant</text>
+
+  </g>
+</svg>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 280" width="960" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="zoneGreen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#3fb950" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#3fb950" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="zoneGreenR" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#3fb950" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#3fb950" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="zoneOrange" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#f78166" stop-opacity="0.04"/>
+      <stop offset="50%"  stop-color="#f78166" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#f78166" stop-opacity="0.04"/>
+    </linearGradient>
+    <marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#3fb950" fill-opacity="0.7"/>
+    </marker>
+    <marker id="arrowO" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#f78166" fill-opacity="0.7"/>
+    </marker>
+    <marker id="arrowR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#f85149"/>
+    </marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <clipPath id="clip">
+      <rect width="960" height="280" rx="12"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <!-- Background -->
+    <rect width="960" height="280" fill="url(#bg)"/>
+
+    <!-- Zone bands -->
+    <rect x="0"   y="0" width="198" height="280" fill="url(#zoneGreen)"/>
+    <rect x="198" y="0" width="564" height="280" fill="url(#zoneOrange)"/>
+    <rect x="762" y="0" width="198" height="280" fill="url(#zoneGreenR)"/>
+
+    <!-- Zone labels (top) -->
+    <text x="99"  y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#3fb950" fill-opacity="0.7" letter-spacing="0.05em">PLAINTEXT ZONE</text>
+    <text x="480" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#f78166" fill-opacity="0.7" letter-spacing="0.05em">ENCRYPTED ZONE — PLATFORM CANNOT READ</text>
+    <text x="861" y="20" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#3fb950" fill-opacity="0.7" letter-spacing="0.05em">PLAINTEXT ZONE</text>
+
+    <!-- Zone dividers -->
+    <line x1="198" y1="0" x2="198" y2="280" stroke="#f78166" stroke-opacity="0.15" stroke-width="1" stroke-dasharray="6,4"/>
+    <line x1="762" y1="0" x2="762" y2="280" stroke="#f78166" stroke-opacity="0.15" stroke-width="1" stroke-dasharray="6,4"/>
+
+    <!-- ── Connection lines ── -->
+    <!-- Alice → Encrypt -->
+    <line x1="152" y1="120" x2="220" y2="120" stroke="#3fb950" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowG)"/>
+    <!-- Encrypt → Platform -->
+    <line x1="334" y1="120" x2="382" y2="120" stroke="#f78166" stroke-opacity="0.6" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowO)"/>
+    <!-- Platform → Decrypt -->
+    <line x1="578" y1="120" x2="626" y2="120" stroke="#f78166" stroke-opacity="0.6" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowO)"/>
+    <!-- Decrypt → Bob -->
+    <line x1="740" y1="120" x2="808" y2="120" stroke="#3fb950" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowG)"/>
+
+    <!-- Midpoint labels -->
+    <text x="183" y="109" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#3fb950" font-weight="700">plaintext</text>
+    <text x="358" y="109" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#f78166" font-weight="700">ciphertext</text>
+    <text x="602" y="109" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#f78166" font-weight="700">ciphertext</text>
+    <text x="775" y="109" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#3fb950" font-weight="700">plaintext</text>
+
+    <!-- ── ALICE DEVICE ── -->
+    <rect x="18" y="76" width="134" height="88" rx="10" fill="#161b22" stroke="#3fb950" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="85" y="104" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="26">&#x1F4F1;</text>
+    <text x="85" y="124" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#3fb950">Alice</text>
+    <text x="85" y="140" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">types message</text>
+    <text x="85" y="156" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#3fb950">&#x1F7E2; PLAINTEXT</text>
+
+    <!-- ── SUMIT KEY ENCRYPT ── -->
+    <rect x="220" y="64" width="114" height="112" rx="10" fill="#161b22" stroke="#f78166" stroke-width="2" filter="url(#shadow)"/>
+    <text x="277" y="92" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F511;</text>
+    <text x="277" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#f78166">SUMIT KEY</text>
+    <text x="277" y="127" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#f78166">Encrypt</text>
+    <text x="277" y="143" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#7d8590">AES-256-GCM</text>
+    <text x="277" y="157" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#56d364">channel key only</text>
+    <text x="277" y="56" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#f78166">&#x1F7E2; &#x2192; &#x1F534;</text>
+
+    <!-- ── PLATFORM ── -->
+    <rect x="382" y="58" width="196" height="124" rx="10" fill="#161b22" stroke="#58a6ff" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="480" y="86" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="24">&#x2601;&#xFE0F;</text>
+    <text x="480" y="107" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#58a6ff">Platform</text>
+    <text x="480" y="123" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#7d8590">WhatsApp · Telegram · Gmail</text>
+    <text x="480" y="138" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" fill="#7d8590">Instagram · Drive · Twitter/X</text>
+    <text x="480" y="155" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#d29922">&#x1F440; sees: &#x1F512; {"ct":"xK93..."}</text>
+    <text x="480" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#d29922">cannot read · cannot modify</text>
+
+    <!-- ── SUMIT KEY DECRYPT ── -->
+    <rect x="626" y="64" width="114" height="112" rx="10" fill="#161b22" stroke="#f78166" stroke-width="2" filter="url(#shadow)"/>
+    <text x="683" y="92" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="22">&#x1F513;</text>
+    <text x="683" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#f78166">SUMIT KEY</text>
+    <text x="683" y="127" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#f78166">Decrypt</text>
+    <text x="683" y="143" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#7d8590">AES-256-GCM</text>
+    <text x="683" y="157" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#56d364">same channel key</text>
+    <text x="683" y="56" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#3fb950">&#x1F534; &#x2192; &#x1F7E2;</text>
+
+    <!-- ── BOB DEVICE ── -->
+    <rect x="808" y="76" width="134" height="88" rx="10" fill="#161b22" stroke="#3fb950" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="875" y="104" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="26">&#x1F4F1;</text>
+    <text x="875" y="124" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#3fb950">Bob</text>
+    <text x="875" y="140" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">reads message</text>
+    <text x="875" y="156" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#3fb950">&#x1F7E2; PLAINTEXT</text>
+
+    <!-- ── HACKER (below platform) ── -->
+    <line x1="480" y1="182" x2="480" y2="216" stroke="#f85149" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="5,4"/>
+    <rect x="386" y="218" width="188" height="46" rx="8" fill="#1c2128" stroke="#f85149" stroke-width="1.5"/>
+    <text x="480" y="236" text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="14">&#x1F608;</text>
+    <text x="504" y="236" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#f85149" font-weight="700">Hacker</text>
+    <text x="480" y="252" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#7d8590">sees: "xK93Lp…" &#x274C; BLOCKED</text>
+
+    <!-- Title bar at bottom -->
+    <text x="480" y="272" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#7d8590">
+      Platform acts as a dumb pipe — SUMIT KEY ensures it never sees plaintext content
+    </text>
+
+  </g>
+</svg>
