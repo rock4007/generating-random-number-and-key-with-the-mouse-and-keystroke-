@@ -655,6 +655,10 @@ class MITMShield:
     def receive(self, wire_bytes: bytes, associated_data: bytes = b"") -> bytes:
         """Verify and decrypt a received wire packet.
 
+        ``associated_data`` is cross-checked against the AAD embedded in the
+        wire packet by the sender.  Pass the same value used in ``send()``; an
+        empty value (default) skips the check and accepts any embedded AAD.
+
         Raises MITMShieldError on any integrity/replay/authentication failure.
         An attacker who modifies even one byte will trigger this exception.
         """
@@ -686,6 +690,11 @@ class MITMShield:
         mac_expected = _hmac.new(sess.wire_hmac_key, wire_bytes[:-64], hashlib.sha3_512).digest()
         if not _hmac.compare_digest(mac_recv, mac_expected):
             raise MITMShieldError("HMAC verification failed — packet tampered or wrong session")
+
+        # If the caller supplied associated_data, verify it matches what the sender embedded.
+        # An empty value (default) skips the check to stay backward-compatible.
+        if associated_data and not _hmac.compare_digest(associated_data, pkt_aad):
+            raise MITMShieldError("associated_data mismatch — does not match embedded AAD")
 
         # Magic / version / session
         if magic != _SHIELD_MAGIC:
@@ -971,10 +980,12 @@ def _dispatch_serverless_action(
 
     elif action == "vault_store":
         key_bytes = bytes.fromhex(payload["key_hex"])
-        password = payload.get("master_password", "").encode() or os.urandom(32)
+        master_pw = payload.get("master_password", "")
+        if not master_pw:
+            raise ValueError("master_password is required for vault_store")
         vid = vault.store(
             key_bytes,
-            master_password=password if isinstance(password, bytes) else password.encode(),
+            master_password=master_pw.encode(),
             n_shards=int(payload.get("n_shards", 5)),
             threshold=int(payload.get("threshold", 3)),
             ttl_seconds=float(payload.get("ttl_seconds", 3600)),

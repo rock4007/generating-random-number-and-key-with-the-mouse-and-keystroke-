@@ -105,28 +105,6 @@ def generate_random_number_and_key(
     return output
 
 
-def _expand_entropy_for_batch(base_entropy: bytes, experiment_tag: str, index: int) -> bytes:
-    """Expand one base entropy blob into per-key input material.
-
-    Why this matters cryptographically:
-    - NIST validation needs many keys, so we derive unique per-key inputs from
-      the captured entropy using domain-separated SHA3-256 hashing.
-    - The experiment tag and index prevent accidental input reuse across
-      experiments and across key positions.
-    """
-
-    if not isinstance(base_entropy, (bytes, bytearray)):
-        raise TypeError("base_entropy must be bytes-like")
-
-    tag_bytes = experiment_tag.encode("utf-8")
-    base = bytes(base_entropy)
-    counter = index.to_bytes(8, "big")
-
-    left = hashlib.sha3_256(tag_bytes + b"|L|" + counter + base).digest()
-    right = hashlib.sha3_256(tag_bytes + b"|R|" + base + counter).digest()
-    return left + right
-
-
 def _generate_key_batch(
     base_entropy: bytes,
     experiment_tag: str,

@@ -43,6 +43,7 @@ Two independent encryption stacks:
 
 from __future__ import annotations
 
+import hmac as _hmac
 import os
 import struct
 from dataclasses import dataclass
@@ -202,11 +203,25 @@ def decrypt_file(
     key_bytes: bytes | bytearray,
     input_path: str | Path,
     output_path: str | Path,
+    *,
+    expected_name: str | None = None,
 ) -> dict[str, object]:
     """Decrypt a file previously encrypted with encrypt_file.
 
+    Args:
+        key_bytes:      Key from KeyGenerator (at least 32 bytes).
+        input_path:     Path to the encrypted .sumitkey file.
+        output_path:    Destination path for the decrypted output.
+        expected_name:  If provided, the embedded filename AAD must equal
+                        ``file:<expected_name>`` (constant-time comparison).
+                        Pass the original source filename to guard against
+                        rename attacks where an attacker serves foo.enc as
+                        bar.enc.  Omit (default) to skip the check.
+
     Raises:
-        ValueError                          if file magic is wrong.
+        ValueError                          if file magic is wrong or
+                                            expected_name is given and the
+                                            embedded AAD does not match.
         cryptography.exceptions.InvalidTag  if key or file is tampered.
     """
     input_path = Path(input_path)
@@ -228,6 +243,18 @@ def decrypt_file(
     nonce = data[offset: offset + NONCE_SIZE]
     offset += NONCE_SIZE
     ciphertext = data[offset:]
+
+    # Optional explicit filename verification (same pattern as MITMShield.receive
+    # associated_data check): GCM proves AAD was not tampered with; this step
+    # proves the caller is decrypting the file they *intended* to decrypt.
+    if expected_name is not None:
+        expected_aad = f"file:{expected_name}".encode("utf-8")
+        if not _hmac.compare_digest(aad, expected_aad):
+            raise ValueError(
+                f"Filename mismatch: file was encrypted as "
+                f"{aad.decode('utf-8', errors='replace')!r} "
+                f"but expected 'file:{expected_name}'"
+            )
 
     encrypted = EncryptedMessage(nonce=nonce, ciphertext=ciphertext, associated_data=aad)
     plaintext = decrypt_message(key_bytes, encrypted)
@@ -569,8 +596,9 @@ def quantum_encrypt_file(
     output_path = Path(output_path)
 
     aad = f"file:{input_path.name}".encode("utf-8")
+    input_bytes = input_path.read_bytes()
     pkg = quantum_encrypt_message(
-        session, input_path.read_bytes(), behavioural_entropy,
+        session, input_bytes, behavioural_entropy,
         associated_data=aad,
         argon2_time_cost=argon2_time_cost,
         argon2_memory_kb=argon2_memory_kb,
@@ -590,7 +618,7 @@ def quantum_encrypt_file(
         f.write(aad)
         f.write(pkg.ciphertext)
 
-    original_size = len(input_path.read_bytes())
+    original_size = len(input_bytes)
     return {
         "input_file": str(input_path),
         "output_file": str(output_path),
@@ -607,10 +635,25 @@ def quantum_decrypt_file(
     dk: QuantumSession | str,
     input_path: str | Path,
     output_path: str | Path,
+    *,
+    expected_name: str | None = None,
 ) -> dict[str, Any]:
     """Decrypt a file produced by quantum_encrypt_file.
 
-    Raises ValueError if magic is wrong, InvalidTag if tampered/wrong dk.
+    Args:
+        dk:             QuantumSession or dk hex string.
+        input_path:     Path to the encrypted quantum-safe file.
+        output_path:    Destination path for the decrypted output.
+        expected_name:  If provided, the embedded filename AAD must equal
+                        ``file:<expected_name>`` (constant-time comparison).
+                        Pass the original source filename to guard against
+                        rename attacks.  Omit (default) to skip the check.
+
+    Raises:
+        ValueError      if magic is wrong, version is unsupported, or
+                        expected_name is given and the embedded AAD does
+                        not match.
+        InvalidTag      if dk is wrong or the file has been tampered with.
     """
     input_path = Path(input_path)
     output_path = Path(output_path)
@@ -637,6 +680,18 @@ def quantum_decrypt_file(
     aad_len,      = struct.unpack(">H", data[off: off + 2]);  off += 2
     aad           = data[off: off + aad_len];           off += aad_len
     ciphertext    = data[off:]
+
+    # Optional explicit filename verification — mirrors the MITMShield
+    # associated_data pattern: GCM proves the AAD was not tampered with;
+    # this step proves the caller is decrypting the file they intended.
+    if expected_name is not None:
+        expected_aad = f"file:{expected_name}".encode("utf-8")
+        if not _hmac.compare_digest(aad, expected_aad):
+            raise ValueError(
+                f"Filename mismatch: file was encrypted as "
+                f"{aad.decode('utf-8', errors='replace')!r} "
+                f"but expected 'file:{expected_name}'"
+            )
 
     pkg = QuantumSafePackage(
         kem_ct=kem_ct, argon2_salt=argon2_salt,

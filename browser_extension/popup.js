@@ -79,9 +79,11 @@ async function refreshState() {
   $("requiredScore").textContent = String(required);
   $("presenceBar").style.width   = `${Math.min(100, Math.round(((presence.score || 0) / required) * 100))}%`;
 
-  // Restore ghost code display if we have one stored
+  // Restore ghost code display if we have one stored; hide it if cleared.
   if (state.lastGhostCode) {
     showGhostCodeBox(state.lastGhostCode);
+  } else {
+    hideGhostCodeBox();
   }
 
   if (state.lastCreatedPackage) {

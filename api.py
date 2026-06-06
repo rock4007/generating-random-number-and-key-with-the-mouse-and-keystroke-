@@ -505,6 +505,51 @@ class _DecryptMessageBody(BaseModel):
     associated_data_hex: str = ""
 
 
+class _GenerateAndEncryptBody(BaseModel):
+    """POST body for /generate-and-encrypt — keeps message out of URLs and logs."""
+    message: str
+    duration: float = 10.0
+    security_level: str = "quantum"
+    label: str = ""
+
+
+class _RotatingEncryptBody(BaseModel):
+    """POST body for /encrypt/rotating-message — keeps message and secrets out of URLs."""
+    message: str
+    user_id: str
+    session_id: str
+    context: str = "message"
+    device_secret_hex: str = ""
+    message_id: str = ""
+    failed_otp_attempts: int = 0
+    nfc_required_but_missing: bool = False
+
+
+class _RotatingDecryptBody(BaseModel):
+    """POST body for /decrypt/rotating-message — keeps ciphertext and secrets out of URLs."""
+    envelope_json: str
+    user_id: str
+    session_id: str
+    context: str = "message"
+    device_secret_hex: str = ""
+    max_clock_skew_seconds: float = 0.0
+
+
+class _SelfHealingEncryptBody(BaseModel):
+    """POST body for /encrypt/self-healing-message — keeps message and secrets out of URLs."""
+    message: str
+    user_id: str
+    session_id: str
+    context: str = "message"
+    device_secret_hex: str = ""
+    backup_device_secret_hex: str = ""
+    operation_id: str = ""
+    message_id: str = ""
+    failed_otp_attempts: int = 0
+    nfc_required_but_missing: bool = False
+    max_retries: int = 2
+
+
 class _GhostEncryptBody(BaseModel):
     """POST body for /ghost/encrypt."""
 
@@ -804,21 +849,21 @@ def ghost_revoke_endpoint(ghost_id: str) -> dict[str, Any]:
 @app.post("/generate-and-encrypt", summary="Generate key from mouse entropy, then encrypt a message")
 def generate_and_encrypt(
     request: Request,
-    message: str = Query(..., description="Plaintext message to encrypt."),
-    duration: float = Query(default=10.0, description="Capture duration in seconds (1-60)."),
-    security_level: str = Query(default="quantum", description="'quantum' (512-bit) or 'standard' (256-bit)."),
-    label: str = Query(default="", description="Optional label bound as AAD."),
+    body: _GenerateAndEncryptBody,
 ) -> dict[str, Any]:
     """Capture mouse entropy, derive a key, and encrypt the given message in one step.
 
     The key is returned in the response so the caller can decrypt later.
     Move your mouse during the capture window.
+
+    Security note: message and label are accepted in the POST body only so they
+    never appear in URLs, server access logs, or browser history.
     """
     client_ip = request.client.host if request.client else "unknown"
 
     try:
-        duration = validate_duration(duration)
-        security_level = validate_security_level(security_level)
+        duration = validate_duration(body.duration)
+        security_level = validate_security_level(body.security_level)
     except HTTPException as exc:
         threat_logger.log_threat("INVALID_INPUT", client_ip, exc.detail)
         raise
@@ -839,8 +884,8 @@ def generate_and_encrypt(
         resource_limits.release()
 
     key_bytes = bytes.fromhex(gen_result["key_hex"])
-    aad = label.encode("utf-8") if label else b""
-    encrypted = _encrypt_msg(key_bytes, message, associated_data=aad)
+    aad = body.label.encode("utf-8") if body.label else b""
+    encrypted = _encrypt_msg(key_bytes, body.message, associated_data=aad)
     enc_dict = message_to_dict(encrypted)
 
     return {
@@ -860,38 +905,35 @@ def generate_and_encrypt(
 @app.post("/encrypt/rotating-message", summary="Encrypt with 0.3-second rotating per-system keys")
 def rotating_encrypt_message_endpoint(
     request: Request,
-    message: str = Query(..., description="Plaintext message to encrypt."),
-    user_id: str = Query(..., min_length=1, description="Stable user/account id."),
-    session_id: str = Query(..., min_length=1, description="Stable session id."),
-    context: str = Query(default="message", description="AAD-bound message context."),
-    device_secret_hex: str = Query(default="", description="Optional 32+ byte hex device secret."),
-    message_id: str = Query(default="", description="Optional unique message id for replay detection."),
-    failed_otp_attempts: int = Query(default=0, ge=0, le=20),
-    nfc_required_but_missing: bool = Query(default=False),
+    body: _RotatingEncryptBody,
 ) -> dict[str, Any]:
     """Encrypt under a key that rotates every 0.3 seconds.
 
     The key is derived from this individual system identity, session id, device
     secret, context, and the current 0.3-second epoch. High-risk threat signals
     block encryption.
+
+    Security note: message, device_secret_hex, and all credentials are accepted
+    in the POST body only — never in query params — to keep them out of server
+    access logs and browser history.
     """
 
     client_ip = request.client.host if request.client else "unknown"
     identity = _api_system_identity(
-        user_id=user_id,
-        session_id=session_id,
-        device_secret_hex=device_secret_hex,
+        user_id=body.user_id,
+        session_id=body.session_id,
+        device_secret_hex=body.device_secret_hex,
     )
     rotating = RotatingKeyEnvelope(identity)
 
     try:
         encrypted = rotating.encrypt(
-            message,
-            context=context,
-            message_id=message_id or None,
+            body.message,
+            context=body.context,
+            message_id=body.message_id or None,
             source_ip=client_ip,
-            failed_otp_attempts=failed_otp_attempts,
-            nfc_required_but_missing=nfc_required_but_missing,
+            failed_otp_attempts=body.failed_otp_attempts,
+            nfc_required_but_missing=body.nfc_required_but_missing,
         )
     except ThreatBlockedError as exc:
         threat_logger.log_threat("ROTATING_ENCRYPT_BLOCKED", client_ip, str(exc))
@@ -910,35 +952,34 @@ def rotating_encrypt_message_endpoint(
 @app.post("/decrypt/rotating-message", summary="Decrypt a 0.3-second rotating-key message")
 def rotating_decrypt_message_endpoint(
     request: Request,
-    envelope_json: str = Query(..., description="JSON envelope returned by /encrypt/rotating-message."),
-    user_id: str = Query(..., min_length=1),
-    session_id: str = Query(..., min_length=1),
-    context: str = Query(default="message"),
-    device_secret_hex: str = Query(default="", description="Same 32+ byte hex device secret used on encrypt."),
-    max_clock_skew_seconds: float = Query(default=0.0, ge=0.0, le=5.0),
+    body: _RotatingDecryptBody,
 ) -> dict[str, Any]:
-    """Decrypt a rotating-key envelope if it has not expired."""
+    """Decrypt a rotating-key envelope if it has not expired.
+
+    Security note: envelope_json and device_secret_hex are accepted in the POST
+    body only to keep ciphertext and credentials out of server access logs.
+    """
 
     client_ip = request.client.host if request.client else "unknown"
     try:
-        envelope_data = json.loads(envelope_json)
+        envelope_data = json.loads(body.envelope_json)
         encrypted = RotatingEncryptedMessage.from_dict(envelope_data)
     except Exception as exc:
         threat_logger.log_threat("ROTATING_DECRYPT_BAD_ENVELOPE", client_ip, type(exc).__name__)
         raise HTTPException(status_code=422, detail="envelope_json is invalid") from exc
 
     identity = _api_system_identity(
-        user_id=user_id,
-        session_id=session_id,
-        device_secret_hex=device_secret_hex,
+        user_id=body.user_id,
+        session_id=body.session_id,
+        device_secret_hex=body.device_secret_hex,
     )
     rotating = RotatingKeyEnvelope(identity)
 
     try:
         plaintext = rotating.decrypt(
             encrypted,
-            context=context,
-            max_clock_skew_seconds=max_clock_skew_seconds,
+            context=body.context,
+            max_clock_skew_seconds=body.max_clock_skew_seconds,
         )
     except ExpiredKeyEpochError as exc:
         threat_logger.log_threat("ROTATING_DECRYPT_EXPIRED", client_ip, str(exc))
@@ -962,50 +1003,44 @@ def rotating_decrypt_message_endpoint(
 @app.post("/encrypt/self-healing-message", summary="Encrypt with self-healing rotating-key recovery")
 def self_healing_encrypt_message_endpoint(
     request: Request,
-    message: str = Query(..., description="Plaintext message to encrypt."),
-    user_id: str = Query(..., min_length=1, description="Stable user/account id."),
-    session_id: str = Query(..., min_length=1, description="Stable session id."),
-    context: str = Query(default="message", description="AAD-bound message context."),
-    device_secret_hex: str = Query(default="", description="Primary 32+ byte hex device secret."),
-    backup_device_secret_hex: str = Query(default="", description="Optional backup 32+ byte hex device secret."),
-    operation_id: str = Query(default="", description="Optional caller-supplied idempotency/recovery id."),
-    message_id: str = Query(default="", description="Optional unique message id for replay detection."),
-    failed_otp_attempts: int = Query(default=0, ge=0, le=20),
-    nfc_required_but_missing: bool = Query(default=False),
-    max_retries: int = Query(default=2, ge=0, le=5),
+    body: _SelfHealingEncryptBody,
 ) -> dict[str, Any]:
     """Encrypt with journaled recovery, retry, verification, and backup failover.
 
     Recovery is fail-closed: real threat blocks, tamper failures, and identity
     mismatches are returned as security stops instead of being bypassed.
+
+    Security note: message, device_secret_hex, and all credentials are accepted
+    in the POST body only — never in query params — to keep them out of server
+    access logs and browser history.
     """
 
     client_ip = request.client.host if request.client else "unknown"
     identity = _api_system_identity(
-        user_id=user_id,
-        session_id=session_id,
-        device_secret_hex=device_secret_hex,
+        user_id=body.user_id,
+        session_id=body.session_id,
+        device_secret_hex=body.device_secret_hex,
     )
     backup_identity = _api_backup_identity(
-        user_id=user_id,
-        session_id=session_id,
-        backup_device_secret_hex=backup_device_secret_hex,
+        user_id=body.user_id,
+        session_id=body.session_id,
+        backup_device_secret_hex=body.backup_device_secret_hex,
     )
     healer = SelfHealingCryptoService(
         identity,
         backup_identity=backup_identity,
-        config=SelfHealingConfig(max_retries=max_retries),
+        config=SelfHealingConfig(max_retries=body.max_retries),
     )
 
     try:
         result = healer.encrypt_message(
-            message,
-            context=context,
-            operation_id=operation_id or None,
-            message_id=message_id or None,
+            body.message,
+            context=body.context,
+            operation_id=body.operation_id or None,
+            message_id=body.message_id or None,
             source_ip=client_ip,
-            failed_otp_attempts=failed_otp_attempts,
-            nfc_required_but_missing=nfc_required_but_missing,
+            failed_otp_attempts=body.failed_otp_attempts,
+            nfc_required_but_missing=body.nfc_required_but_missing,
         )
     except UnrecoverableSecurityError as exc:
         threat_logger.log_threat("SELF_HEALING_SECURITY_STOP", client_ip, str(exc))
@@ -1611,22 +1646,24 @@ def threat_assess_endpoint(request: Request, body: ThreatAssessRequest) -> dict[
 
 # ── Serverless proxy endpoint ─────────────────────────────────────────────────
 
+class _VaultServerlessBody(BaseModel):
+    """POST body for /vault/serverless."""
+    action: str
+    payload: dict[str, Any] = {}
+
+
 @app.post("/vault/serverless", summary="Provider-agnostic serverless action dispatcher")
-def vault_serverless_endpoint(
-    action: str = Query(..., description="One of: zkp_keygen, zkp_prove, zkp_verify, vault_store, vault_retrieve, vault_status, vault_seal, vault_zeroize, threat_assess"),
-    payload: dict[str, Any] = None,
-) -> dict[str, Any]:
+def vault_serverless_endpoint(body: _VaultServerlessBody) -> dict[str, Any]:
     """Dispatch a vault action through the AWS Lambda / GCP / Azure compatible handler.
 
     Same interface as the Lambda `lambda_handler(event, context)` function —
     useful for testing serverless behaviour without deploying to a cloud provider.
     """
-    event = {"action": action, "payload": payload or {}}
+    event = {"action": body.action, "payload": body.payload}
     result = _vault_lambda(event)
-    import json
-    body = json.loads(result["body"])
-    body["http_status"] = result["statusCode"]
-    return body
+    result_body = json.loads(result["body"])
+    result_body["http_status"] = result["statusCode"]
+    return result_body
 
 
 # ---------------------------------------------------------------------------

@@ -55,7 +55,6 @@ class ThreatLogger:
         """Log a threat event, resolve attacker MAC, and alert admin."""
         # Resolve MAC outside the lock (may be slow)
         try:
-            from security import lookup_mac_address
             mac = lookup_mac_address(ip)
         except Exception:
             mac = "unknown"
@@ -332,16 +331,21 @@ class APIKeyAuth:
         return True
 
 
-def require_api_key(api_key: Optional[str] = None) -> Depends:
+_api_key_auth = APIKeyAuth()
+
+
+def require_api_key(api_key: Optional[str] = None) -> bool:
     """FastAPI dependency to require valid API key.
-    
+
+    The ``SUMIT_API_KEY`` env var must contain the SHA-256 hex digest of the
+    actual key (not the plaintext).  Auth is disabled when the var is unset.
+
     Usage:
       @app.post("/protected")
       def protected_route(payload: dict, _auth=Depends(require_api_key)):
           ...
     """
-    auth = APIKeyAuth()
-    return Depends(auth)
+    return _api_key_auth(api_key)
 
 
 # ============================================================================

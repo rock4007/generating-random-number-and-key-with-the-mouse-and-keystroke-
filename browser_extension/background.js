@@ -198,8 +198,6 @@ async function unlockPendingPackage() {
         ghostKeyStatus: result.ghost_key_status,
         openedAt: nowSeconds(),
       },
-      pendingGhostPackage: null,
-      activeGhostId: null,
     });
     await storageRemove(["pendingGhostPackage", "activeGhostId"]);
     await notify("SUMIT KEY: Ghost Opened", "Message opened once. Ghost key is gone.");
@@ -304,10 +302,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const pkg = message.packageData || stored.pendingGhostPackage;
       if (!pkg) throw new Error("No ghost package saved.");
       const plaintext = await localDecrypt(pkg, message.ghostCode);
-      await storageSet({
-        lastUnlock: { plaintext, openedAt: nowSeconds() },
-        pendingGhostPackage: null,
-      });
+      await storageSet({ lastUnlock: { plaintext, openedAt: nowSeconds() } });
       await storageRemove(["pendingGhostPackage"]);
       await notify("SUMIT KEY: Ghost Opened", "Message opened once. Ghost key burned.");
       return { ok: true, plaintext };
