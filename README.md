@@ -140,6 +140,19 @@ python -m http.server 8080
 # → http://127.0.0.1:8080/dashboard.html
 ```
 
+### Sandbox demos
+
+These demos use synthetic mouse and keystroke events, so they work in Codespaces
+or CI without a display server:
+
+```bash
+python scripts/sandbox_demo.py --demo classic
+python scripts/sandbox_demo.py --demo file
+python scripts/sandbox_demo.py --demo ghost
+python scripts/sandbox_demo.py --demo quantum-ghost
+python scripts/sandbox_demo.py --demo all
+```
+
 ### Extension only (no Python needed)
 
 1. Download or clone the repo
