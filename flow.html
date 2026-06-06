@@ -119,6 +119,60 @@ tr:hover td{background:#1c2128}
 .pulse{animation:pulse 2s infinite}
 @keyframes flow-anim{0%{stroke-dashoffset:20}100%{stroke-dashoffset:0}}
 .flow-line{stroke-dasharray:6 4;animation:flow-anim 1.2s linear infinite}
+
+/* ── Social Media Safety ── */
+@keyframes pkt-travel{
+  0%{left:4%;opacity:0;background:#3fb950}
+  3%{left:7%;opacity:1;background:#3fb950;box-shadow:0 0 8px #3fb950aa}
+  28%{left:26%;background:#3fb950;box-shadow:0 0 8px #3fb950aa}
+  33%{left:30%;background:#f78166;box-shadow:0 0 10px #f78166}
+  67%{left:66%;background:#f78166;box-shadow:0 0 10px #f78166}
+  72%{left:70%;background:#3fb950;box-shadow:0 0 8px #3fb950aa}
+  97%{left:93%;opacity:1}
+  100%{left:93%;opacity:0}
+}
+@keyframes hk-drop{
+  0%,28%{opacity:0;top:69%}
+  35%{opacity:1;top:71%;background:#f85149;box-shadow:0 0 6px #f85149}
+  62%{opacity:.8;top:83%}
+  69%{opacity:0;top:87%}
+  100%{opacity:0;top:87%}
+}
+@keyframes shield-ring{
+  0%,100%{opacity:.6;r:44}
+  50%{opacity:1;r:48}
+}
+@keyframes blink-block{
+  0%,100%{opacity:1}
+  50%{opacity:.3}
+}
+.j-pkt{position:absolute;width:14px;height:14px;border-radius:50%;top:calc(50% - 7px);animation:pkt-travel 4s ease-in-out infinite;z-index:5;pointer-events:none}
+.j-pkt-hack{position:absolute;width:10px;height:10px;border-radius:50%;left:calc(52.8% - 5px);background:#f85149;opacity:0;animation:hk-drop 4s ease-in-out infinite;z-index:5;pointer-events:none}
+.journey-container{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:16px 0}
+.before-after{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+@media(max-width:600px){.before-after{grid-template-columns:1fr}}
+.ba-panel{border-radius:10px;padding:18px;border:1px solid}
+.ba-panel.bad{border-color:#f8514944;background:#f8514906}
+.ba-panel.good{border-color:#3fb95044;background:#3fb95006}
+.ba-title{font-size:14px;font-weight:700;margin-bottom:12px}
+.msg-bubble{background:#21262d;border:1px solid #30363d;border-radius:8px;padding:10px 12px;font-size:12px;margin:6px 0}
+.msg-bubble.encrypted{font-family:'Cascadia Code','Fira Code','Courier New',monospace;color:#7d8590;font-size:10px;word-break:break-all}
+.attack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:16px 0}
+.attack-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:12px;align-items:flex-start;transition:.2s}
+.attack-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.atk-icon{font-size:24px;flex-shrink:0;margin-top:2px}
+.atk-title{font-size:12px;font-weight:700;margin-bottom:4px}
+.atk-body{font-size:11px;color:var(--muted);line-height:1.6}
+.atk-result{display:inline-block;margin-top:8px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px}
+.atk-result.blocked{background:#f8514922;color:#f85149}
+.atk-result.safe-warn{background:#d2992222;color:#d29922}
+.platform-shield-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin:16px 0}
+.ps-card{background:var(--panel);border:1px solid #3fb95033;border-radius:10px;padding:14px 10px;text-align:center;transition:.2s}
+.ps-card:hover{border-color:#3fb95077;box-shadow:0 0 16px #3fb95022}
+.ps-icon{font-size:28px;margin-bottom:6px}
+.ps-name{font-size:12px;font-weight:700;margin-bottom:4px}
+.ps-shield{font-size:10px;color:#3fb950;font-weight:700;margin-top:4px}
+.ps-id{font-size:10px;color:var(--muted);font-family:monospace}
 </style>
 </head>
 <body>
@@ -143,6 +197,7 @@ tr:hover td{background:#1c2128}
   <button class="tab-btn" data-tab="platforms">Platforms</button>
   <button class="tab-btn" data-tab="security">Security Model</button>
   <button class="tab-btn" data-tab="api">API & SDK</button>
+  <button class="tab-btn" data-tab="social">📱 Social Media Safety</button>
 </nav>
 
 <main>
@@ -848,6 +903,409 @@ ch_tg.decrypt(env_wa)  <span class="cm"># → SumitKeyError: wrong key (platform
 <span class="kw">const</span> <span class="prop">msg</span> = <span class="kw">await</span> SumitKey.decryptText(<span class="prop">env</span>, key);
     </div>
   </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ SOCIAL MEDIA SAFETY -->
+<section id="social" class="section">
+  <div class="sec-title">📱 How Social Media Gets Safe</div>
+  <div class="sec-sub">Messages encrypted on your device — platforms only ever see ciphertext. Zero trust in the server.</div>
+
+  <!-- ── 1. Animated Message Journey ── -->
+  <div style="font-size:15px;font-weight:700;margin:20px 0 8px;display:flex;align-items:center;gap:10px">
+    🚀 Live Message Journey
+    <span style="font-size:11px;font-weight:400;color:var(--muted);background:var(--panel);border:1px solid var(--border);padding:2px 8px;border-radius:10px">animated</span>
+  </div>
+  <div style="color:var(--muted);font-size:12px;margin-bottom:8px">Watch the green packet (plaintext) turn orange (encrypted) as it passes through SUMIT KEY, travel through the platform unseen, then turn green again when Bob decrypts it. The red packet is the hacker — it never reaches the core.</div>
+
+  <div class="journey-container" style="height:268px">
+    <svg viewBox="0 0 900 268" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+      <rect width="900" height="268" fill="#161b22"/>
+
+      <!-- band: plaintext zone left -->
+      <rect x="0" y="0" width="220" height="268" fill="#3fb95006"/>
+      <!-- band: cipher zone center -->
+      <rect x="220" y="0" width="460" height="268" fill="#f7816606"/>
+      <!-- band: plaintext zone right -->
+      <rect x="680" y="0" width="220" height="268" fill="#3fb95006"/>
+
+      <!-- zone labels -->
+      <text x="110" y="14" text-anchor="middle" fill="#3fb95066" font-size="9" font-weight="700">PLAINTEXT ZONE</text>
+      <text x="450" y="14" text-anchor="middle" fill="#f7816666" font-size="9" font-weight="700">ENCRYPTED ZONE — PLATFORM CANNOT READ</text>
+      <text x="790" y="14" text-anchor="middle" fill="#3fb95066" font-size="9" font-weight="700">PLAINTEXT ZONE</text>
+
+      <!-- connection lines -->
+      <line x1="110" y1="134" x2="212" y2="134" stroke="#3fb95044" stroke-width="2" stroke-dasharray="6 4"/>
+      <line x1="322" y1="134" x2="412" y2="134" stroke="#f7816655" stroke-width="2" stroke-dasharray="6 4"/>
+      <line x1="542" y1="134" x2="622" y2="134" stroke="#f7816655" stroke-width="2" stroke-dasharray="6 4"/>
+      <line x1="732" y1="134" x2="812" y2="134" stroke="#3fb95044" stroke-width="2" stroke-dasharray="6 4"/>
+
+      <!-- hacker intercept line (drops down from platform) -->
+      <line x1="477" y1="192" x2="477" y2="235" stroke="#f8514944" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+      <!-- line midpoint labels -->
+      <text x="161" y="122" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="700">plaintext</text>
+      <text x="367" y="122" text-anchor="middle" fill="#f78166" font-size="9" font-weight="700">ciphertext</text>
+      <text x="582" y="122" text-anchor="middle" fill="#f78166" font-size="9" font-weight="700">ciphertext</text>
+      <text x="772" y="122" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="700">plaintext</text>
+
+      <!-- ── ALICE ── -->
+      <rect x="20" y="94" width="90" height="80" fill="#1c2128" rx="8" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="65" y="119" text-anchor="middle" font-size="24">📱</text>
+      <text x="65" y="138" text-anchor="middle" fill="#3fb950" font-weight="700" font-size="12">Alice</text>
+      <text x="65" y="153" text-anchor="middle" fill="#7d8590" font-size="10">types message</text>
+      <text x="65" y="167" text-anchor="middle" fill="#3fb950" font-size="9">🟢 PLAINTEXT</text>
+
+      <!-- ── SUMIT KEY ENCRYPT ── -->
+      <rect x="212" y="84" width="110" height="100" fill="#1c2128" rx="8" stroke="#f78166" stroke-width="2"/>
+      <text x="267" y="108" text-anchor="middle" font-size="20">🔑</text>
+      <text x="267" y="126" text-anchor="middle" fill="#f78166" font-weight="700" font-size="12">SUMIT KEY</text>
+      <text x="267" y="141" text-anchor="middle" fill="#f78166" font-size="10">Encrypt</text>
+      <text x="267" y="155" text-anchor="middle" fill="#7d8590" font-size="9">AES-256-GCM</text>
+      <text x="267" y="168" text-anchor="middle" fill="#56d364" font-size="9">channel key</text>
+      <text x="267" y="76" text-anchor="middle" fill="#f78166" font-size="10" font-weight="700">🟢 → 🔴</text>
+
+      <!-- ── PLATFORM CLOUD ── -->
+      <rect x="412" y="84" width="130" height="108" fill="#1c2128" rx="8" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="477" y="108" text-anchor="middle" font-size="22">☁️</text>
+      <text x="477" y="127" text-anchor="middle" fill="#58a6ff" font-weight="700" font-size="12">Platform</text>
+      <text x="477" y="142" text-anchor="middle" fill="#7d8590" font-size="9">WhatsApp · Telegram</text>
+      <text x="477" y="155" text-anchor="middle" fill="#7d8590" font-size="9">Gmail · Instagram · X</text>
+      <text x="477" y="170" text-anchor="middle" fill="#d29922" font-size="10" font-weight="700">👁 sees only: 🔒</text>
+      <text x="477" y="184" text-anchor="middle" fill="#d29922" font-size="9">{"ct":"xK93Lp..."}</text>
+
+      <!-- ── SUMIT KEY DECRYPT ── -->
+      <rect x="622" y="84" width="110" height="100" fill="#1c2128" rx="8" stroke="#f78166" stroke-width="2"/>
+      <text x="677" y="108" text-anchor="middle" font-size="20">🔓</text>
+      <text x="677" y="126" text-anchor="middle" fill="#f78166" font-weight="700" font-size="12">SUMIT KEY</text>
+      <text x="677" y="141" text-anchor="middle" fill="#f78166" font-size="10">Decrypt</text>
+      <text x="677" y="155" text-anchor="middle" fill="#7d8590" font-size="9">AES-256-GCM</text>
+      <text x="677" y="168" text-anchor="middle" fill="#56d364" font-size="9">same channel key</text>
+      <text x="677" y="76" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">🔴 → 🟢</text>
+
+      <!-- ── BOB ── -->
+      <rect x="790" y="94" width="90" height="80" fill="#1c2128" rx="8" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="835" y="119" text-anchor="middle" font-size="24">📱</text>
+      <text x="835" y="138" text-anchor="middle" fill="#3fb950" font-weight="700" font-size="12">Bob</text>
+      <text x="835" y="153" text-anchor="middle" fill="#7d8590" font-size="10">reads message</text>
+      <text x="835" y="167" text-anchor="middle" fill="#3fb950" font-size="9">🟢 PLAINTEXT</text>
+
+      <!-- ── HACKER ── -->
+      <rect x="386" y="236" width="182" height="26" fill="#1c2128" rx="6" stroke="#f85149" stroke-width="1.5"/>
+      <text x="477" y="249" text-anchor="middle" font-size="12">😈 Hacker sees: "xK93Lp…" ❌ BLOCKED</text>
+      <text x="477" y="260" text-anchor="middle" fill="#f85149" font-size="9">GCM auth tag rejects any tampering</text>
+    </svg>
+    <!-- CSS animated message packet -->
+    <div class="j-pkt"></div>
+    <!-- CSS animated hacker intercept attempt -->
+    <div class="j-pkt-hack"></div>
+  </div>
+
+  <div style="background:#3fb95010;border:1px solid #3fb95033;border-radius:8px;padding:14px 18px;font-size:13px;line-height:1.7">
+    <b style="color:#3fb950">Key insight:</b> WhatsApp, Telegram, Instagram and every other platform act as a dumb pipe.
+    They transmit your message — but only ever see the encrypted blob.
+    Encryption and decryption happen on <b>your device</b>, before and after the platform touches the data.
+    Even a full server breach exposes only ciphertext that is computationally infeasible to break.
+  </div>
+
+  <!-- ── 2. Before vs After ── -->
+  <div style="font-size:15px;font-weight:700;margin:28px 0 12px">⚖️ Before vs After SUMIT KEY</div>
+
+  <div class="before-after">
+    <div class="ba-panel bad">
+      <div class="ba-title" style="color:#f85149">❌ Without SUMIT KEY</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Alice types:</div>
+      <div class="msg-bubble">💬 "Merger terms: 12% equity, £240k seed, 18-month cliff."</div>
+      <div style="text-align:center;margin:8px 0;font-size:18px">⬇️</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Platform server receives:</div>
+      <div class="msg-bubble" style="border-color:#f8514944">💬 "Merger terms: 12% equity, £240k seed, 18-month cliff."</div>
+      <div style="font-size:10px;color:#f85149;margin:6px 4px">👀 Platform staff can read this &nbsp;·&nbsp; 💀 Hackers after a breach can read this &nbsp;·&nbsp; 🏛 Subpoena reveals everything</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+        <div style="background:#f8514910;border:1px solid #f8514933;border-radius:6px;padding:8px;text-align:center;font-size:10px">
+          <div style="font-size:18px;margin-bottom:4px">🏢</div>
+          <div style="color:#f85149;font-weight:700">Platform</div>
+          <div style="color:var(--muted)">reads all DMs</div>
+        </div>
+        <div style="background:#f8514910;border:1px solid #f8514933;border-radius:6px;padding:8px;text-align:center;font-size:10px">
+          <div style="font-size:18px;margin-bottom:4px">💥</div>
+          <div style="color:#f85149;font-weight:700">Breach</div>
+          <div style="color:var(--muted)">all data exposed</div>
+        </div>
+        <div style="background:#f8514910;border:1px solid #f8514933;border-radius:6px;padding:8px;text-align:center;font-size:10px">
+          <div style="font-size:18px;margin-bottom:4px">🕵️</div>
+          <div style="color:#f85149;font-weight:700">MITM</div>
+          <div style="color:var(--muted)">reads in transit</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-panel good">
+      <div class="ba-title" style="color:#3fb950">✅ With SUMIT KEY</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Alice types:</div>
+      <div class="msg-bubble">💬 "Merger terms: 12% equity, £240k seed, 18-month cliff."</div>
+      <div style="text-align:center;margin:6px 0;font-size:13px;color:#f78166">🔑 AES-256-GCM · channel key · Alice's device only</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Platform server receives:</div>
+      <div class="msg-bubble encrypted">{"magic":"SUMK","v":1,"nonce":"aB3kX9mP2nQr7vTs","ct":"xK93LpW7vN4mRs2qYdF8uJ…","fp":"fp:a3f2c1b9"}</div>
+      <div style="font-size:10px;color:#3fb950;margin:6px 4px">🔒 Platform sees only ciphertext &nbsp;·&nbsp; ❌ Breach yields unreadable data &nbsp;·&nbsp; 🛡 MITM gets nothing</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+        <div style="background:#3fb95010;border:1px solid #3fb95033;border-radius:6px;padding:8px;text-align:center;font-size:10px">
+          <div style="font-size:18px;margin-bottom:4px">🏢</div>
+          <div style="color:#3fb950;font-weight:700">Platform</div>
+          <div style="color:var(--muted)">sees ciphertext</div>
+        </div>
+        <div style="background:#3fb95010;border:1px solid #3fb95033;border-radius:6px;padding:8px;text-align:center;font-size:10px">
+          <div style="font-size:18px;margin-bottom:4px">🛡</div>
+          <div style="color:#3fb950;font-weight:700">Breach safe</div>
+          <div style="color:var(--muted)">encrypted only</div>
+        </div>
+        <div style="background:#3fb95010;border:1px solid #3fb95033;border-radius:6px;padding:8px;text-align:center;font-size:10px">
+          <div style="font-size:18px;margin-bottom:4px">🔒</div>
+          <div style="color:#3fb950;font-weight:700">MITM</div>
+          <div style="color:var(--muted)">GCM rejects</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. What Each Platform Sees ── -->
+  <div style="font-size:15px;font-weight:700;margin:28px 0 12px">👁 What Each Platform Sees vs What It Gets</div>
+  <table>
+    <thead><tr><th>Platform</th><th>What SUMIT KEY sends</th><th>What the server reads</th><th>Protection</th></tr></thead>
+    <tbody>
+      <tr><td>💬 WhatsApp</td><td><code style="font-size:10px;color:#7d8590">{"magic":"SUMK","nonce":"aB3k…","ct":"xK93Lp…"}</code></td><td style="color:#f78166;font-size:12px">Encrypted blob — unreadable</td><td><span style="background:#3fb95022;color:#3fb950;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">🔒 PROTECTED</span></td></tr>
+      <tr><td>✈️ Telegram</td><td><code style="font-size:10px;color:#7d8590">{"magic":"SUMK","nonce":"bC4m…","ct":"yL04Mq…"}</code></td><td style="color:#f78166;font-size:12px">Encrypted blob — unreadable</td><td><span style="background:#3fb95022;color:#3fb950;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">🔒 PROTECTED</span></td></tr>
+      <tr><td>📧 Gmail</td><td><code style="font-size:10px;color:#7d8590">{"magic":"SUMK","nonce":"cD5n…","ct":"zM15Nr…"}</code></td><td style="color:#f78166;font-size:12px">Encrypted email body</td><td><span style="background:#3fb95022;color:#3fb950;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">🔒 PROTECTED</span></td></tr>
+      <tr><td>🗂 Google Drive</td><td><code style="font-size:10px;color:#7d8590">board_minutes.pdf.sumitkey (binary)</code></td><td style="color:#f78166;font-size:12px">Binary ciphertext only</td><td><span style="background:#3fb95022;color:#3fb950;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">🔒 PROTECTED</span></td></tr>
+      <tr><td>📸 Instagram</td><td><code style="font-size:10px;color:#7d8590">🔒 {"magic":"SUMK","nonce":"eF7p…","ct":"…"}</code></td><td style="color:#f78166;font-size:12px">Encrypted DM body</td><td><span style="background:#3fb95022;color:#3fb950;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">🔒 PROTECTED</span></td></tr>
+      <tr><td>🐦 Twitter/X</td><td><code style="font-size:10px;color:#7d8590">🔒 {"magic":"SUMK","nonce":"gH8q…","ct":"…"}</code></td><td style="color:#f78166;font-size:12px">Encrypted DM body</td><td><span style="background:#3fb95022;color:#3fb950;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">🔒 PROTECTED</span></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 4. Platform Protection Grid ── -->
+  <div style="font-size:15px;font-weight:700;margin:28px 0 12px">🛡 Per-Platform Protection Status</div>
+  <div class="platform-shield-grid">
+    <div class="ps-card">
+      <div class="ps-icon">💬</div>
+      <div class="ps-name">WhatsApp</div>
+      <div class="ps-id">+44-7700-900001</div>
+      <div class="ps-shield">🛡 AES-256-GCM</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px">message body encrypted</div>
+    </div>
+    <div class="ps-card">
+      <div class="ps-icon">✈️</div>
+      <div class="ps-name">Telegram</div>
+      <div class="ps-id">@alice_tg</div>
+      <div class="ps-shield">🛡 AES-256-GCM</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px">multi-channel isolated</div>
+    </div>
+    <div class="ps-card">
+      <div class="ps-icon">📧</div>
+      <div class="ps-name">Gmail</div>
+      <div class="ps-id">alice@co.com</div>
+      <div class="ps-shield">🛡 AES-256-GCM</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px">Google never reads</div>
+    </div>
+    <div class="ps-card">
+      <div class="ps-icon">🗂</div>
+      <div class="ps-name">Google Drive</div>
+      <div class="ps-id">alice@co.com</div>
+      <div class="ps-shield">🛡 AES-256-GCM</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px">file encrypted pre-upload</div>
+    </div>
+    <div class="ps-card">
+      <div class="ps-icon">📸</div>
+      <div class="ps-name">Instagram</div>
+      <div class="ps-id">@alice.photo</div>
+      <div class="ps-shield">🛡 AES-256-GCM</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px">DM body opaque</div>
+    </div>
+    <div class="ps-card">
+      <div class="ps-icon">🐦</div>
+      <div class="ps-name">Twitter/X</div>
+      <div class="ps-id">@alice_x</div>
+      <div class="ps-shield">🛡 AES-256-GCM</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px">DM body opaque</div>
+    </div>
+  </div>
+
+  <!-- ── 5. Attack Scenarios ── -->
+  <div style="font-size:15px;font-weight:700;margin:28px 0 12px">⚔️ Attack Scenarios — How Each Is Blocked</div>
+  <div class="attack-grid">
+    <div class="attack-card">
+      <div class="atk-icon">🏢</div>
+      <div>
+        <div class="atk-title">Platform reads your DMs</div>
+        <div class="atk-body">Platform server receives only {"magic":"SUMK","ct":"…"}. AES-256-GCM ciphertext is computationally infeasible to break without the channel key — which never leaves your device.</div>
+        <span class="atk-result blocked">❌ BLOCKED — AES-256-GCM</span>
+      </div>
+    </div>
+    <div class="attack-card">
+      <div class="atk-icon">💥</div>
+      <div>
+        <div class="atk-title">Platform server breach</div>
+        <div class="atk-body">Attacker dumps the full database. All they find are encrypted blobs. Channel keys were never stored on the platform — they exist only on Alice and Bob's devices.</div>
+        <span class="atk-result blocked">❌ BLOCKED — key never stored server-side</span>
+      </div>
+    </div>
+    <div class="attack-card">
+      <div class="atk-icon">🕵️</div>
+      <div>
+        <div class="atk-title">Man-in-the-middle intercept</div>
+        <div class="atk-body">MITM captures the ciphertext in transit. The GCM authentication tag detects any bit flip or substitution. MITMShield adds HMAC-SHA3-512 + monotonic sequence counter to reject replays.</div>
+        <span class="atk-result blocked">❌ BLOCKED — GCM tag + MITMShield</span>
+      </div>
+    </div>
+    <div class="attack-card">
+      <div class="atk-icon">🔓</div>
+      <div>
+        <div class="atk-title">Account hijacked</div>
+        <div class="atk-body">Attacker takes over your WhatsApp account. They can send new messages — but cannot decrypt past messages because the channel key is on your device, not your account credentials.</div>
+        <span class="atk-result safe-warn">⚠️ PARTIAL — past messages stay safe</span>
+      </div>
+    </div>
+    <div class="attack-card">
+      <div class="atk-icon">⚛️</div>
+      <div>
+        <div class="atk-title">Quantum computer attack</div>
+        <div class="atk-body">Future quantum computers break RSA and ECDH via Shor's algorithm. SUMIT KEY Stack B uses ML-KEM-1024 (NIST FIPS 203, 2024) — specifically proven resistant to Shor's and Grover's algorithms.</div>
+        <span class="atk-result blocked">❌ BLOCKED — ML-KEM-1024 NIST Level 5</span>
+      </div>
+    </div>
+    <div class="attack-card">
+      <div class="atk-icon">🔁</div>
+      <div>
+        <div class="atk-title">Replay attack</div>
+        <div class="atk-body">Attacker records a valid ciphertext and re-sends it later. Each encryption uses a fresh 96-bit random nonce per operation. MITMShield's monotonic sequence counter rejects out-of-order packets.</div>
+        <span class="atk-result blocked">❌ BLOCKED — random nonce + sequence counter</span>
+      </div>
+    </div>
+    <div class="attack-card">
+      <div class="atk-icon">🐍</div>
+      <div>
+        <div class="atk-title">Cross-platform replay</div>
+        <div class="atk-body">Attacker copies a WhatsApp ciphertext and pastes it into Telegram. The channel key derivation includes the platform label — so Telegram's channel key ≠ WhatsApp's. GCM auth fails immediately.</div>
+        <span class="atk-result blocked">❌ BLOCKED — platform-bound channel key</span>
+      </div>
+    </div>
+    <div class="attack-card">
+      <div class="atk-icon">🔄</div>
+      <div>
+        <div class="atk-title">Impersonation (replay as sender)</div>
+        <div class="atk-body">Attacker replays Alice's ciphertext pretending Bob sent it. Each envelope embeds the directional context "platform:alice→bob" in the GCM AAD — wrong direction = wrong AAD = authentication failure.</div>
+        <span class="atk-result blocked">❌ BLOCKED — directional AAD binding</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. Protection Layers Diagram ── -->
+  <div style="font-size:15px;font-weight:700;margin:28px 0 12px">🌐 Protection Layer Architecture</div>
+  <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Concentric rings — each layer must be defeated independently. An attacker at the outer platform ring cannot penetrate the inner SUMIT KEY ring.</div>
+
+  <div class="flow-wrap">
+  <svg class="flow" viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif" font-size="12">
+    <rect width="860" height="380" fill="#0d1117" rx="10"/>
+
+    <!-- Layer 4: Platform (outer, gray, untrusted) -->
+    <ellipse cx="430" cy="190" rx="395" ry="168" fill="#1c212808" stroke="#7d859044" stroke-width="2" stroke-dasharray="10 5"/>
+    <!-- Layer 3: TLS transport (blue) -->
+    <ellipse cx="430" cy="190" rx="315" ry="134" fill="#58a6ff06" stroke="#58a6ff33" stroke-width="1.5"/>
+    <!-- Layer 2: SUMIT KEY AES-GCM (orange) -->
+    <ellipse cx="430" cy="190" rx="228" ry="100" fill="#f7816608" stroke="#f7816655" stroke-width="2"/>
+    <!-- Layer 1: Channel key (green) -->
+    <ellipse cx="430" cy="190" rx="140" ry="62" fill="#3fb95010" stroke="#3fb95066" stroke-width="2"/>
+    <!-- Core: Plaintext (purple) -->
+    <ellipse cx="430" cy="190" rx="68" ry="32" fill="#a371f718" stroke="#a371f7" stroke-width="2"/>
+
+    <!-- Core label -->
+    <text x="430" y="185" text-anchor="middle" fill="#a371f7" font-weight="700" font-size="14">💬</text>
+    <text x="430" y="202" text-anchor="middle" fill="#a371f7" font-weight="700" font-size="12">Plaintext</text>
+
+    <!-- Ring labels (right side) -->
+    <text x="574" y="185" fill="#3fb950" font-size="11" font-weight="700">Channel Key</text>
+    <text x="574" y="199" fill="#3fb950" font-size="10">alice ↔ bob only</text>
+
+    <text x="660" y="176" fill="#f78166" font-size="11" font-weight="700">SUMIT KEY</text>
+    <text x="660" y="190" fill="#f78166" font-size="10">AES-256-GCM</text>
+    <text x="660" y="204" fill="#f78166" font-size="10">channel-bound</text>
+
+    <text x="746" y="166" fill="#58a6ff" font-size="11" font-weight="700">TLS / HTTPS</text>
+    <text x="746" y="180" fill="#58a6ff" font-size="10">in-transit encryption</text>
+
+    <text x="795" y="152" fill="#7d8590" font-size="11" font-weight="700">Platform</text>
+    <text x="795" y="166" fill="#7d8590" font-size="10">untrusted · dumb pipe</text>
+
+    <!-- Ring labels (left side pointers) -->
+    <line x1="258" y1="190" x2="220" y2="190" stroke="#3fb95044" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="200" y1="190" x2="140" y2="190" stroke="#f7816644" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="112" y1="190" x2="66" y2="190" stroke="#58a6ff33" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="35" y1="190" x2="10" y2="190" stroke="#7d859033" stroke-width="1" stroke-dasharray="3 2"/>
+
+    <!-- Hacker on left trying to penetrate from outer ring -->
+    <text x="52" y="326" text-anchor="middle" font-size="32">😈</text>
+    <text x="52" y="350" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">HACKER</text>
+    <!-- Blocked at SUMIT KEY ring -->
+    <line x1="80" y1="318" x2="194" y2="248" stroke="#f85149" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="133" y="295" text-anchor="middle" fill="#f85149" font-size="10" font-weight="700">❌</text>
+    <text x="133" y="308" text-anchor="middle" fill="#f85149" font-size="9">blocked at</text>
+    <text x="133" y="320" text-anchor="middle" fill="#f85149" font-size="9">SUMIT KEY ring</text>
+
+    <!-- Quantum attacker bottom right -->
+    <text x="780" y="330" text-anchor="middle" font-size="28">⚛️</text>
+    <text x="780" y="354" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">QUANTUM</text>
+    <text x="780" y="368" text-anchor="middle" fill="#d29922" font-size="9">ML-KEM-1024 blocks →</text>
+    <line x1="756" y1="320" x2="660" y2="268" stroke="#d29922" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="710" y="302" text-anchor="middle" fill="#d29922" font-size="10" font-weight="700">❌</text>
+
+    <!-- Legal subpoena top left -->
+    <text x="60" y="46" text-anchor="middle" font-size="22">🏛️</text>
+    <text x="60" y="66" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="700">Subpoena</text>
+    <text x="60" y="79" text-anchor="middle" fill="#58a6ff" font-size="9">platform gives</text>
+    <text x="60" y="91" text-anchor="middle" fill="#58a6ff" font-size="9">ciphertext only</text>
+    <line x1="84" y1="56" x2="166" y2="90" stroke="#58a6ff44" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="122" y="78" text-anchor="middle" fill="#58a6ff" font-size="9">❌ no key</text>
+  </svg>
+  </div>
+
+  <!-- ── 7. How it works end-to-end summary ── -->
+  <div style="font-size:15px;font-weight:700;margin:28px 0 12px">📋 End-to-End Summary</div>
+  <div class="steps" style="max-width:700px">
+    <div class="step step-blue">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Alice and Bob exchange a shared secret once</div>
+        <div class="step-desc"><code>s = alice.new_shared_secret()</code> — shared out-of-band (QR code, in person). This one-time step bootstraps the relationship. It never goes through the platform.</div>
+      </div>
+    </div>
+    <div class="step step-purple">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Both independently derive the same channel key</div>
+        <div class="step-desc"><code>HKDF-SHA3(sorted(alice_pid, bob_pid) + shared_secret + platform)</code> — derived deterministically on each device. The key never travels over any network.</div>
+      </div>
+    </div>
+    <div class="step step-orange">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Alice encrypts on her device before sending</div>
+        <div class="step-desc"><code>envelope = ch_alice.encrypt("Meet at noon.")</code> — AES-256-GCM with a fresh 96-bit nonce, channel-bound AAD, 128-bit authentication tag. Happens entirely on Alice's device.</div>
+      </div>
+    </div>
+    <div class="step step-green">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Platform transmits the opaque blob</div>
+        <div class="step-desc">WhatsApp / Telegram / Gmail receives and forwards <code>{"magic":"SUMK","ct":"xK93Lp…"}</code>. It cannot read it. It cannot modify it (GCM tag would fail). It acts as a dumb delivery pipe.</div>
+      </div>
+    </div>
+    <div class="step step-pink">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Bob decrypts on his device</div>
+        <div class="step-desc"><code>msg = ch_bob.decrypt(envelope)</code> — Bob's device uses the same channel key to verify the GCM tag and decrypt. Only Bob can do this. The platform was never involved in key management.</div>
+      </div>
+    </div>
+  </div>
+
 </section>
 
 </main>
