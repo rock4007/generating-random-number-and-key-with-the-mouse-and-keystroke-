@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Soumodeep Guha (rock4007). All Rights Reserved.
+ # Copyright (c) 2026 Soumodeep Guha (rock4007). All Rights Reserved.
 # PROPRIETARY AND CONFIDENTIAL — see LICENSE (Part A) for terms.
 # Unauthorised copying, modification, distribution, or use is strictly prohibited.
 

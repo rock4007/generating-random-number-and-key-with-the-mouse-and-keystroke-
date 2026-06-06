@@ -1,0 +1,37 @@
+SUMIT KEY - NIST SP 800-22 Combined Experiment Report
+======================================================
+
+Experiment A - Mouse Entropy Only
+---------------------------------
+Keys evaluated: 4000
+Total bits evaluated: 1024000
+Sequence count: 1
+Scoring mode: direct_verdict
+Overall: 12/14 eligible tests passed
+Overall pass rate: 85.71%
+Library-calibrated pass rate: 12/12 (100.00%)
+
+Experiment B - Keystroke Entropy Only
+-------------------------------------
+Keys evaluated: 4000
+Total bits evaluated: 1024000
+Sequence count: 1
+Scoring mode: direct_verdict
+Overall: 12/14 eligible tests passed
+Overall pass rate: 85.71%
+Library-calibrated pass rate: 12/12 (100.00%)
+
+Experiment C - Combined Mouse + Keystroke Entropy
+-------------------------------------------------
+Keys evaluated: 4000
+Total bits evaluated: 1024000
+Sequence count: 1
+Scoring mode: direct_verdict
+Overall: 12/14 eligible tests passed
+Overall pass rate: 85.71%
+Library-calibrated pass rate: 12/12 (100.00%)
+
+Note:
+- NIST SP 800-22 is statistical, so occasional failures can occur even with strong randomness.
+- For broader eligibility across all 15 tests, increase total evaluated bits.
+- The calibrated score excludes local nistrng tests that fail the os.urandom baseline in this environment.
