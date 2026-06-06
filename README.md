@@ -31,6 +31,7 @@
 - [Overview](#overview)
 - [Platform Security Model](#platform-security-model)
 - [Quick Start](#quick-start)
+- [Installation & Integration](#installation--integration)
 - [Architecture](#architecture)
 - [Per-User Identity & Channels](#per-user-identity--channels)
 - [Cryptographic Stacks](#cryptographic-stacks)
@@ -168,6 +169,366 @@ const msg = await SumitKey.decryptText(env, key);  // → "hello"
 3. Send tab → type a message → **Create Ghost Package**
 4. Share the JSON blob over any channel; share the ghost code over a **separate** channel
 5. Receiver: paste JSON + ghost code → move mouse → **Open Now** (burns the key after one read)
+
+---
+
+## Installation & Integration
+
+> One server, any platform, any social media.  
+> SUMIT KEY runs as a lightweight local API — any phone, tablet, or desktop calls it over HTTP.
+
+### Universal Setup — 3 commands, any OS
+
+```bash
+# 1. Clone
+git clone https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-.git
+cd generating-random-number-and-key-with-the-mouse-and-keystroke-
+
+# 2. Install (Python 3.11+)
+pip install cryptography fastapi uvicorn
+
+# 3. Start (accessible from any device on the same network)
+uvicorn sdk.server:app --host 0.0.0.0 --port 8001
+```
+
+API is live at `http://localhost:8001/health`. Every platform below calls this server.
+
+---
+
+### Platform Support Matrix
+
+| Platform | Integration method | Setup time |
+|---|---|---|
+| 🪟 Windows | Python SDK · REST API | ~2 min |
+| 🍎 macOS | Python SDK · REST API | ~2 min |
+| 🐧 Linux | Python SDK · REST API | ~2 min |
+| 🌐 Web browser (any OS) | Chrome Extension · JS SDK | ~1 min |
+| 📱 Android | REST API (OkHttp / Retrofit) | ~5 min |
+| 🍎 iOS | REST API (URLSession / Alamofire) | ~5 min |
+| 🐳 Docker | One-command container | ~3 min |
+
+---
+
+### 🪟 Windows · 🍎 macOS · 🐧 Linux — Python SDK
+
+```bash
+pip install cryptography
+```
+
+```python
+from sdk.identity import UserIdentity
+
+# Replace with your real account IDs on the platform
+alice = UserIdentity("your_handle",    platform="whatsapp")   # or telegram / gmail / instagram / twitter
+bob   = UserIdentity("contact_handle", platform="whatsapp")
+
+# One-time: share this secret with your contact (QR code or in person — NOT through the app)
+secret = alice.new_shared_secret()
+
+# Both sides create their channel with the same secret
+ch_alice = alice.channel_to(bob.public_id(),   shared_secret=secret)
+ch_bob   = bob.channel_to(alice.public_id(),   shared_secret=secret)
+
+# Encrypt before sending
+encrypted = ch_alice.encrypt("Your private message here")
+# → paste this into WhatsApp / Telegram / Gmail / Instagram / Twitter
+
+# Decrypt after receiving
+plain = ch_bob.decrypt(encrypted)   # → "Your private message here"
+```
+
+---
+
+### 🌐 Web Browser — Chrome · Edge · Brave (any OS)
+
+Works with **WhatsApp Web, Telegram Web, Instagram, Twitter/X, Gmail** — every platform with a web version.
+
+#### Option A — Chrome Extension *(easiest — no code required)*
+
+| Step | Action |
+|---|---|
+| 1 | Open `chrome://extensions` in your browser |
+| 2 | Toggle **Developer mode** on (top-right) |
+| 3 | Click **Load unpacked** → select the `browser_extension/` folder |
+| 4 | SUMIT KEY icon appears in your toolbar |
+| 5 | Open WhatsApp Web / Telegram Web / Instagram → click the icon → type message → **Create Ghost Package** |
+
+#### Option B — JavaScript SDK *(for web app developers)*
+
+```html
+<!-- No npm, no build step — drop this into any webpage -->
+<script src="sdk/sumitkey.js"></script>
+<script>
+  (async () => {
+    const key = await SumitKey.newKey();
+    const env = await SumitKey.encryptText("Your private message", key);
+    // paste `env` into WhatsApp Web / Telegram Web / Gmail
+
+    const plain = await SumitKey.decryptText(env, key);
+    console.log(plain);  // → "Your private message"
+  })();
+</script>
+```
+
+---
+
+### 📱 Android
+
+No app to install on Android — call the SUMIT KEY REST API from any Android app using standard HTTP.
+
+**Prerequisites:** Start the server (on your laptop or any server):
+```bash
+uvicorn sdk.server:app --host 0.0.0.0 --port 8001
+```
+
+**Android — Kotlin (OkHttp)**
+
+```kotlin
+// In build.gradle:  implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+import okhttp3.*; import okhttp3.MediaType.Companion.toMediaType
+import org.json.JSONObject
+
+private val client = OkHttpClient()
+private val JSON   = "application/json".toMediaType()
+private val SERVER = "http://YOUR_SERVER_IP:8001"   // ← replace with your server IP
+
+fun generateKey(): String {
+    val req = Request.Builder().url("$SERVER/key/new")
+        .post(RequestBody.create(JSON, "{}")).build()
+    return JSONObject(client.newCall(req).execute().body!!.string()).getString("key")
+}
+
+fun encryptMsg(text: String, key: String): String {
+    val body = JSONObject().put("text", text).put("key", key).toString()
+    val req  = Request.Builder().url("$SERVER/encrypt")
+        .post(RequestBody.create(JSON, body)).build()
+    return JSONObject(client.newCall(req).execute().body!!.string()).getString("envelope")
+}
+
+fun decryptMsg(envelope: String, key: String): String {
+    val body = JSONObject().put("envelope", envelope).put("key", key).toString()
+    val req  = Request.Builder().url("$SERVER/decrypt")
+        .post(RequestBody.create(JSON, body)).build()
+    return JSONObject(client.newCall(req).execute().body!!.string()).getString("text")
+}
+```
+
+**Usage — wrap any social media message:**
+```kotlin
+// One-time key (store securely, share with contact out-of-band)
+val key = generateKey()
+
+val encrypted = encryptMsg("Meet at noon", key)
+// → paste `encrypted` into WhatsApp / Telegram / Instagram DM
+
+val plain = decryptMsg(encrypted, key)   // → "Meet at noon"
+```
+
+---
+
+### 🍎 iOS — Swift (URLSession)
+
+```swift
+import Foundation
+
+let SERVER = "http://YOUR_SERVER_IP:8001"   // ← replace with your server IP
+
+func post(_ path: String, body: [String: String]) async throws -> [String: Any] {
+    var req = URLRequest(url: URL(string: SERVER + path)!)
+    req.httpMethod = "POST"
+    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    req.httpBody = try JSONSerialization.data(withJSONObject: body)
+    let (data, _) = try await URLSession.shared.data(for: req)
+    return try JSONSerialization.jsonObject(with: data) as! [String: Any]
+}
+
+func generateKey() async throws -> String {
+    return try await post("/key/new", body: [:])["key"] as! String
+}
+
+func encryptMsg(_ text: String, key: String) async throws -> String {
+    return try await post("/encrypt", body: ["text": text, "key": key])["envelope"] as! String
+}
+
+func decryptMsg(_ envelope: String, key: String) async throws -> String {
+    return try await post("/decrypt", body: ["envelope": envelope, "key": key])["text"] as! String
+}
+```
+
+**Usage:**
+```swift
+let key       = try await generateKey()
+let encrypted = try await encryptMsg("Meet at noon", key: key)
+// → paste into WhatsApp / iMessage / Telegram / Instagram DM
+
+let plain = try await decryptMsg(encrypted, key: key)   // → "Meet at noon"
+```
+
+---
+
+### 🐳 Docker — deploy anywhere in one command
+
+```dockerfile
+# Dockerfile (already included in the repo)
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir cryptography fastapi uvicorn
+COPY sdk/ ./sdk/
+EXPOSE 8001
+CMD ["uvicorn", "sdk.server:app", "--host", "0.0.0.0", "--port", "8001"]
+```
+
+```bash
+# Build + run
+docker build -t sumitkey .
+docker run -p 8001:8001 sumitkey
+
+# Or pull and run (one line, no clone needed)
+docker run -p 8001:8001 sumitkey
+```
+
+Accessible from any device at `http://HOST_IP:8001` — phone, tablet, laptop, or CI pipeline.
+
+---
+
+### Social Media — Step-by-Step Guide
+
+> These steps are identical on iOS, Android, Windows, and macOS.
+
+<details>
+<summary><b>💬 WhatsApp</b></summary>
+
+| Step | What to do |
+|---|---|
+| 1 | Both people start the SUMIT KEY server (or use the same shared server) |
+| 2 | Alice: `alice = UserIdentity("+44-7700-900001", platform="whatsapp")` |
+| 3 | Bob: `bob = UserIdentity("+44-7700-900002", platform="whatsapp")` |
+| 4 | Alice generates a secret: `s = alice.new_shared_secret()` |
+| 5 | Alice shares `s` with Bob via QR code or in person — **not through WhatsApp** |
+| 6 | Both create their channel: `ch = identity.channel_to(other.public_id(), shared_secret=s)` |
+| 7 | Alice: `enc = ch_alice.encrypt("message")` → pastes into WhatsApp |
+| 8 | Bob receives `enc` → `ch_bob.decrypt(enc)` → reads the plaintext |
+
+WhatsApp sees only: `{"magic":"SUMK","nonce":"aB3kX9…","ct":"xK93Lp…"}` — unreadable.
+
+</details>
+
+<details>
+<summary><b>✈️ Telegram</b></summary>
+
+```python
+alice = UserIdentity("@alice_tg", platform="telegram")
+bob   = UserIdentity("@bob_tg",   platform="telegram")
+s     = alice.new_shared_secret()   # share via Telegram's "Share Contact" QR or in person
+
+ch_alice = alice.channel_to(bob.public_id(), shared_secret=s)
+ch_bob   = bob.channel_to(alice.public_id(), shared_secret=s)
+
+env = ch_alice.encrypt("Project deadline Friday")
+# → paste into Telegram message
+plain = ch_bob.decrypt(env)   # → "Project deadline Friday"
+```
+
+Also supports **group channels** — each pair of participants gets their own channel key.
+
+</details>
+
+<details>
+<summary><b>📧 Gmail</b></summary>
+
+```python
+alice = UserIdentity("alice@company.com", platform="gmail")
+bob   = UserIdentity("bob@company.com",   platform="gmail")
+s     = alice.new_shared_secret()
+
+ch_alice = alice.channel_to(bob.public_id(), shared_secret=s)
+ch_bob   = bob.channel_to(alice.public_id(), shared_secret=s)
+
+# Encrypt the email body
+body = "Hi Bob, merger terms: 12% equity, £240k seed, 18-month cliff."
+env  = ch_alice.encrypt(body)
+
+# Send the envelope as the email body — Google never reads it
+# Subject line: "[SUMIT KEY ENCRYPTED]"
+plain = ch_bob.decrypt(env)   # → original body
+```
+
+</details>
+
+<details>
+<summary><b>🗂 Google Drive</b></summary>
+
+```python
+# Personal document — only Alice can open it
+alice_dr    = UserIdentity("alice@company.com", platform="gdrive")
+personal_sk = SumitKey()
+enc_file    = personal_sk.encrypt_file(
+    open("report.pdf","rb").read(), "report.pdf",
+    alice_dr.personal_key()
+)
+# Upload enc_file to Drive — Google stores only ciphertext
+
+# Shared document — Alice + Bob both open it
+bob_dr = UserIdentity("bob@company.com", platform="gdrive")
+s      = alice_dr.new_shared_secret()
+ch_a   = alice_dr.channel_to(bob_dr.public_id(), shared_secret=s)
+ch_b   = bob_dr.channel_to(alice_dr.public_id(), shared_secret=s)
+
+enc_shared = ch_a.encrypt_file(open("minutes.pdf","rb").read(), "minutes.pdf")
+# Upload to Drive; Bob decrypts: ch_b.decrypt_file(enc_shared)
+```
+
+</details>
+
+<details>
+<summary><b>📸 Instagram · 🐦 Twitter/X</b></summary>
+
+```python
+# Instagram
+alice_ig = UserIdentity("@alice.photo", platform="instagram")
+bob_ig   = UserIdentity("@bob.photo",   platform="instagram")
+s        = alice_ig.new_shared_secret()
+
+ch_ig_a  = alice_ig.channel_to(bob_ig.public_id(), shared_secret=s)
+ch_ig_b  = bob_ig.channel_to(alice_ig.public_id(), shared_secret=s)
+
+env = ch_ig_a.encrypt("DM: off-the-record offer — $4.2M")
+# paste into Instagram DM prefixed with 🔒
+plain = ch_ig_b.decrypt(env)
+
+# Twitter/X — same pattern, change platform
+alice_tw = UserIdentity("@alice_x", platform="twitter")
+```
+
+</details>
+
+---
+
+### Quick Test — Verify the install works
+
+```bash
+# 1. Health check
+curl http://localhost:8001/health
+# → {"status":"ok","version":"1.0"}
+
+# 2. Generate a key
+KEY=$(curl -s -X POST http://localhost:8001/key/new \
+  -H "Content-Type: application/json" -d '{}' | python3 -c "import sys,json; print(json.load(sys.stdin)['key'])")
+
+# 3. Encrypt
+ENV=$(curl -s -X POST http://localhost:8001/encrypt \
+  -H "Content-Type: application/json" \
+  -d "{\"text\":\"hello from any platform\",\"key\":\"$KEY\"}" | \
+  python3 -c "import sys,json; print(json.load(sys.stdin)['envelope'])")
+
+# 4. Decrypt
+curl -s -X POST http://localhost:8001/decrypt \
+  -H "Content-Type: application/json" \
+  -d "{\"envelope\":\"$ENV\",\"key\":\"$KEY\"}"
+# → {"text":"hello from any platform"}
+```
 
 ---
 
