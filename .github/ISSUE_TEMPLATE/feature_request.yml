@@ -1,0 +1,68 @@
+name: Feature request
+description: Propose an addition or enhancement to SUMIT KEY
+labels: ["enhancement", "needs-triage"]
+assignees: ["rock4007"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting, check [open issues](../issues) and [discussions](../discussions)
+        to avoid duplicates. This form is for feature proposals — use the bug report
+        form for defects.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which layer does this feature touch?
+      options:
+        - Cryptographic core (new cipher, KDF, or primitive)
+        - Platform integration (new platform or integration improvement)
+        - API (new endpoint or request/response shape)
+        - SDK (Python, JavaScript, or mobile)
+        - Entropy pipeline (new input source or feature)
+        - Security / threat detection
+        - Performance
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What limitation, friction, or missing capability does this address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        Describe your proposed approach. Include API design (function signatures,
+        endpoint shapes) if relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider, and why did you rule them out?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched open issues and discussions for duplicates
+          required: true
+        - label: This feature does not require breaking changes to the public API
+          required: false
+        - label: I am willing to submit a pull request implementing this feature
+          required: false

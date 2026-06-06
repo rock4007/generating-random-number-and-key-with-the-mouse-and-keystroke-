@@ -6,22 +6,24 @@
 
 <div align="center">
 
+[![Version](https://img.shields.io/badge/version-1.0.0-0ea5e9?style=flat-square)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-stable-22c55e?style=flat-square)]()
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-318%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white)](#test-suite--318-passing)
-[![AES](https://img.shields.io/badge/AES-256--GCM-0ea5e9?style=flat-square)](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
+[![AES](https://img.shields.io/badge/AES-256--GCM-0ea5e9?style=flat-square)](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-38d.pdf)
 [![ML-KEM](https://img.shields.io/badge/ML--KEM-1024%20FIPS%20203-7c3aed?style=flat-square)](https://csrc.nist.gov/pubs/fips/203/final)
-[![Platforms](https://img.shields.io/badge/platforms-6%20integrations-e11d48?style=flat-square)](#platform-integrations)
-[![SDK](https://img.shields.io/badge/SDK-1%20dependency-22c55e?style=flat-square)](#quick-start--lightweight-sdk)
-[![Extension](https://img.shields.io/badge/Chrome-Extension%20MV3-f59e0b?style=flat-square&logo=googlechrome&logoColor=white)](#quick-start--chrome-extension)
-[![NIST](https://img.shields.io/badge/NIST-SP%20800--22-6366f1?style=flat-square)](#nist-sp-800-22-validation)
+[![NIST](https://img.shields.io/badge/NIST-SP%20800--22-6366f1?style=flat-square)](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final)
+[![SDK](https://img.shields.io/badge/SDK-1%20dependency-22c55e?style=flat-square)](#sdk-server--4-endpoints-1-dependency)
+[![Security Policy](https://img.shields.io/badge/security%20policy-SECURITY.md-f59e0b?style=flat-square)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT%20%2F%20Proprietary-d29922?style=flat-square)](#license)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square&logo=github)](.github/CONTRIBUTING.md)
 
 </div>
 
 <br/>
 
 <p align="center">
-<b>Cryptographic key generation from how you move and type — with a complete per-user identity layer and encryption that sits in front of any social media, messaging, or cloud storage platform.</b>
+<b>Behavioural entropy cryptography: keys derived from how you move and type, with per-user identity binding and transparent end-to-end encryption across any social media, messaging, or cloud storage platform.</b>
 </p>
 
 ---
@@ -29,6 +31,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Key Concepts](#key-concepts)
 - [Platform Security Model](#platform-security-model)
 - [Quick Start](#quick-start)
 - [Installation & Integration](#installation--integration)
@@ -38,12 +41,18 @@
 - [Entropy Pipeline](#entropy-pipeline)
 - [Platform Integrations](#platform-integrations)
 - [NIST SP 800-22 Validation](#nist-sp-800-22-validation)
+- [Performance](#performance)
 - [Test Suite — 318 Passing](#test-suite--318-passing)
 - [API Reference](#api-reference)
+- [Error Reference](#error-reference)
+- [Production Deployment](#production-deployment)
 - [Key Material Hygiene](#key-material-hygiene)
 - [Security Limitations](#security-limitations)
 - [Project Layout](#project-layout)
 - [Dependency Matrix](#dependency-matrix)
+- [Versioning](#versioning)
+- [Contributing](#contributing)
+- [Support](#support)
 - [License](#license)
 
 ---
@@ -69,6 +78,20 @@ Bob  (+44-7700-900002, WhatsApp)
 - The channel key is derived from **both** identities — only Alice and Bob can produce it
 - A WhatsApp channel key **cannot** be replayed on Telegram (platform label is in the KDF)
 - A server breach exposes only encrypted blobs; the keys never leave the devices
+
+---
+
+## Key Concepts
+
+| Concept | Description |
+|---|---|
+| **Behavioural entropy** | Statistical features (mouse velocity, micro-tremor, keystroke dwell/flight time, per-key-pair bigrams) mixed into `os.urandom`. Additive — never a replacement for system randomness. |
+| **UserIdentity** | Cryptographic identity bound to `(user_id, platform, device_secret)`. The `device_secret` never leaves the device. Identities on the same `user_id` across different platforms produce distinct keys. |
+| **Channel** | A symmetric encryption context derived from `HKDF-SHA3-256(sorted(alice_pid, bob_pid) ‖ platform ‖ shared_secret)`. Both parties derive the same key independently — the key itself never traverses any network. |
+| **Shared secret** | A 256-bit random value exchanged once, out-of-band (e.g. QR code scan or in-person). The only value that must remain confidential between two parties. |
+| **Envelope** | A self-describing payload: `{"magic":"SUMK","v":1,"nonce":"…","ct":"…","fp":"…"}`. Transmittable over any channel as an opaque string. |
+| **Platform isolation** | The platform label (e.g. `"whatsapp"`) is a KDF input. A WhatsApp envelope cannot be decrypted on Telegram — different derived key, identical shared secret. |
+| **Ghost package** | Burn-after-read encrypted bundle. The decryption key is zeroized in memory after a single successful open. State machine: `ARMED → HOT → BURNED`. |
 
 ---
 
@@ -777,6 +800,27 @@ python main.py --mode experiments --num-keys 4000
 
 ---
 
+## Performance
+
+Benchmarks collected on Python 3.11, AMD Ryzen 9 5900X, Ubuntu 22.04, `cryptography` 42.0. Run your own with `curl http://localhost:8000/benchmark` after starting the full API.
+
+| Operation | p50 | p99 | Notes |
+|---|---|---|---|
+| AES-256-GCM encrypt 1 KB | ~5 µs | ~8 µs | Includes 96-bit nonce generation |
+| AES-256-GCM encrypt 1 MB | ~1.1 ms | ~1.5 ms | |
+| HKDF-SHA3-256 derive | ~9 µs | ~13 µs | Per call |
+| `pool_entropy()` | ~14 µs | ~22 µs | SHA3-256 over feature vector |
+| Channel key derivation | ~18 µs | ~28 µs | HKDF + SHA3-256 over sorted IDs |
+| ML-KEM-1024 keygen | ~1.4 ms | ~2.2 ms | `kyber-py` |
+| ML-KEM-1024 encapsulate | ~1.1 ms | ~1.9 ms | |
+| ML-KEM-1024 decapsulate | ~1.2 ms | ~2.0 ms | |
+| Argon2id (64 MB, t=1) | ~1.8 s | ~2.4 s | **Intentional** — memory-hard per RFC 9106 |
+| Ghost encrypt 1 KB | ~22 µs | ~36 µs | Keygen + AES + key zeroize |
+
+> **Argon2id note.** The ~1.8 s latency in Stack B is by design: as a memory-hard function (RFC 9106) it renders offline dictionary attacks computationally infeasible. Use Stack A (AES-256-GCM direct) when throughput is the priority.
+
+---
+
 ## Test Suite — 318 Passing
 
 ```bash
@@ -848,6 +892,98 @@ uvicorn api:app --port 8000
 | `GET /nist/experiments` | — | Run NIST SP 800-22 battery |
 
 </details>
+
+---
+
+## Error Reference
+
+All SDK errors are `SumitKeyError` (subclass of `ValueError`). Decryption failures specifically raise `DecryptionError` (subclass of `SumitKeyError`).
+
+| Message | Cause | Fix |
+|---|---|---|
+| `GCM authentication failed` | Wrong key, tampered ciphertext, or wrong channel direction | Confirm both sides use the same `shared_secret` and platform label |
+| `filename AAD mismatch` | `expected_name=` does not match the name embedded in the ciphertext | Pass the original filename, or omit `expected_name` |
+| `associated_data mismatch` | `MITMShield.receive()` AAD differs from sender's | Ensure both sides pass identical `associated_data` bytes |
+| `master_password is required` | `vault_store` called without a password | Include `master_password` in the request payload |
+| `entropy health check failed` | Captured input is constant, dominated, or contains a long run | Capture more varied mouse/keyboard input before key generation |
+| `user_id must not be empty` | `UserIdentity("")` | Pass a non-empty string identifier |
+| `shared_secret decode failed` | `shared_secret` is not valid URL-safe base64 | Use the output of `new_shared_secret()` or a 32-byte base64-encoded value |
+
+```python
+from sdk.core import SumitKeyError
+
+try:
+    plain = ch_bob.decrypt(envelope)
+except SumitKeyError as e:
+    # Wrong key, tampered ciphertext, or platform mismatch
+    handle_error(e)
+```
+
+---
+
+## Production Deployment
+
+### Docker
+
+```bash
+docker build -t sumitkey:1.0.0 .
+docker run -d --name sumitkey -p 8001:8001 --restart unless-stopped sumitkey:1.0.0
+```
+
+### Kubernetes
+
+```yaml
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sumitkey
+spec:
+  replicas: 3
+  selector: {matchLabels: {app: sumitkey}}
+  template:
+    metadata: {labels: {app: sumitkey}}
+    spec:
+      containers:
+      - name: sumitkey
+        image: sumitkey:1.0.0
+        ports: [{containerPort: 8001}]
+        resources:
+          requests: {memory: "128Mi", cpu: "100m"}
+          limits:   {memory: "512Mi", cpu: "500m"}
+        livenessProbe:
+          httpGet: {path: /health, port: 8001}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata: {name: sumitkey}
+spec:
+  selector: {app: sumitkey}
+  ports: [{port: 8001, targetPort: 8001}]
+```
+
+```bash
+kubectl apply -f k8s/deployment.yaml
+```
+
+### Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `8001` | Listen port |
+| `SUMITKEY_API_KEY` | — | Optional bearer token for endpoint protection |
+| `SUMITKEY_LOG_LEVEL` | `info` | `debug` / `info` / `warning` |
+
+### Health check
+
+```bash
+curl http://localhost:8001/health
+# → {"status":"ok","version":"1.0.0"}
+```
+
+> **Rate limiting.** The API enforces 10 requests/minute and 100 requests/hour per IP by default. Blocked IPs and threat events are logged with a monotonic timestamp, originating IP, and (for LAN clients) MAC address.
 
 ---
 
@@ -923,8 +1059,14 @@ See [SECURITY_LIMITATIONS.md](SECURITY_LIMITATIONS.md) for the complete checklis
 ├── flow.html                   Interactive visual system flow (7 tabs)
 ├── SPEAKING_NOTES.md           Dissertation presentation notes
 ├── STACKOVERFLOW_POST.md       Technical Q&A reference
+├── SECURITY.md                 Vulnerability disclosure policy
+├── CHANGELOG.md                Full version history (semver 2.0)
+├── Dockerfile                  Production container image
+├── k8s/deployment.yaml         Kubernetes Deployment + Service
 ├── .github/CODEOWNERS          All files require @rock4007 review
-└── .github/CONTRIBUTING.md     Access request process
+├── .github/CONTRIBUTING.md     Access request process
+├── .github/ISSUE_TEMPLATE/     Bug report and feature request forms
+└── docs/images/                SVG architecture and flow diagrams
 ```
 
 `⬤` proprietary — All Rights Reserved
@@ -950,3 +1092,36 @@ Files marked `⬤` are **proprietary — All Rights Reserved**.
 All other files are **MIT licensed**.
 
 Copyright © 2026 Soumodeep Guha ([rock4007](https://github.com/rock4007))
+
+---
+
+## Versioning
+
+This project follows [Semantic Versioning 2.0.0](https://semver.org). See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+
+**Current stable:** `v1.0.0`
+
+The public API surface (`sdk/core.py`, `sdk/identity.py`, `sdk/server.py`) is stable. Internal modules marked `⬤` may change in minor versions without notice.
+
+---
+
+## Contributing
+
+See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) for the full contribution process.
+
+All pull requests must:
+- Include tests covering the new behaviour
+- Pass the full 318-test suite (`python -m pytest tests/ -q`)
+- Carry a [Developer Certificate of Origin](https://developercertificate.org/) sign-off (`git commit -s`)
+
+> **Security bugs.** Report vulnerabilities via [SECURITY.md](SECURITY.md). Do not open a public issue for a security flaw — responsible disclosure is required.
+
+---
+
+## Support
+
+| Channel | Use for |
+|---|---|
+| [GitHub Issues](https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-/issues) | Bug reports, feature requests |
+| [GitHub Discussions](https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-/discussions) | Questions, usage help, ideas |
+| [SECURITY.md](SECURITY.md) | Vulnerability disclosure (private) |

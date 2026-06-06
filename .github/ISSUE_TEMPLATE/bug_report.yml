@@ -1,0 +1,74 @@
+name: Bug report
+description: Report a reproducible defect in SUMIT KEY
+labels: ["bug", "needs-triage"]
+assignees: ["rock4007"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Security vulnerability?** Do not use this form.
+        Report it privately via [SECURITY.md](../SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `python -c "import sdk.core; print(sdk.core.__version__)"` or the git tag
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the system is affected?
+      options:
+        - sdk/core.py (SumitKey, encrypt/decrypt)
+        - sdk/identity.py (UserIdentity, Channel)
+        - sdk/server.py (4-endpoint server)
+        - api.py (full REST API)
+        - browser_extension / sdk/sumitkey.js
+        - entropy_engine / capture / key_generator
+        - vault.py / ZKP / Shamir
+        - advanced_security.py / rotating keys
+        - nist_validator.py
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug. Include what you expected vs. what happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal code or command sequence that reproduces the issue.
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Python version, OS, relevant package versions.
+        Run: `python -m pip freeze | grep -E "cryptography|argon2|kyber|fastapi|uvicorn|pynput|numpy|nistrng"`
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output / traceback
+      description: Paste the full traceback here if applicable.
+      render: shell

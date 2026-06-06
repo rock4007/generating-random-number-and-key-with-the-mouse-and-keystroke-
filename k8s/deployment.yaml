@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sumitkey
+  labels:
+    app: sumitkey
+    version: "1.0.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sumitkey
+  template:
+    metadata:
+      labels:
+        app: sumitkey
+    spec:
+      containers:
+      - name: sumitkey
+        image: sumitkey:1.0.0
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        - name: PORT
+          value: "8001"
+        - name: SUMITKEY_LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sumitkey
+spec:
+  selector:
+    app: sumitkey
+  ports:
+  - name: http
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP
