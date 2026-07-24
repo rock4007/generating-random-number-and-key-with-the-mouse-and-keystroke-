@@ -18,10 +18,18 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-dev libssl-dev
+
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
 
+      - name: Run Python syntax check
+        run: python -m py_compile scripts/ci_check.py
+
       - name: Run local CI pipeline
-        run: python scripts/ci_check.py
+        run: python scripts/ci_check.py --quick
