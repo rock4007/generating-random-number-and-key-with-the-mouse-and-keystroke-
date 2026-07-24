@@ -11,9 +11,24 @@ Reads all JSON test reports and generates comprehensive dashboard data including
 
 import json
 import os
+import re
 from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List
+
+# Dashboards that fetch dashboard_data.json and need an offline (file://) fallback
+# snapshot embedded directly in their HTML.
+OFFLINE_DASHBOARDS = [
+    "dashboard-complete.html",
+    "dashboard-entropy.html",
+    "dashboard-mouse.html",
+    "dashboard-nist.html",
+]
+
+_EMBEDDED_DATA_RE = re.compile(
+    r'(<script type="application/json" id="embedded-dashboard-data">)(.*?)(</script>)',
+    re.DOTALL,
+)
 
 
 class DashboardDataProcessor:
@@ -28,6 +43,7 @@ class DashboardDataProcessor:
             "research_evidence": self._process_research_evidence(),
             "moat_report": self._process_moat_report(),
             "tier1_features": self._process_tier1_features(),
+            "isolation_tests": self._process_isolation_tests(),
             "summary": {}
         }
         self._compute_summary()
@@ -230,6 +246,47 @@ class DashboardDataProcessor:
         except Exception as e:
             return {"status": "ERROR", "error": str(e)}
 
+    def _process_isolation_tests(self) -> Dict[str, Any]:
+        """Extract sandbox/blackbox/identity two-party isolation test results."""
+        iso_file = self.results_dir / "isolation_tests_report.json"
+        if not iso_file.exists():
+            return {"status": "NOT_FOUND"}
+
+        try:
+            with open(iso_file) as f:
+                report = json.load(f)
+
+            suites = report.get("suites", {})
+            total = sum(s.get("total", 0) for s in suites.values())
+            failed = sum(s.get("failures", 0) + s.get("errors", 0) for s in suites.values())
+            passed = total - failed
+
+            return {
+                "status": "SUCCESS",
+                "total_tests": total,
+                "passed": passed,
+                "failed": failed,
+                "suites": {
+                    name: {
+                        "file": s.get("file", ""),
+                        "total": s.get("total", 0),
+                        "passed": s.get("total", 0) - s.get("failures", 0) - s.get("errors", 0),
+                        "failed": s.get("failures", 0) + s.get("errors", 0),
+                    }
+                    for name, s in suites.items()
+                },
+                "two_party_isolation_tests": [
+                    {
+                        "suite": t.get("suite", ""),
+                        "name": t.get("name", ""),
+                        "passed": t.get("passed", False),
+                    }
+                    for t in report.get("two_party_isolation_tests", [])
+                ],
+            }
+        except Exception as e:
+            return {"status": "ERROR", "error": str(e)}
+
     def _compute_summary(self) -> None:
         """Compute overall summary statistics."""
         summary = {
@@ -281,6 +338,26 @@ class DashboardDataProcessor:
                 "total": moat.get("total_tests", 0)
             })
 
+        # Analyze isolation tests (sandbox/blackbox/identity two-party isolation)
+        isolation = self.data["isolation_tests"]
+        if isolation.get("status") == "SUCCESS":
+            summary["test_suites"].append({
+                "name": "Isolation Tests",
+                "status": "PASS" if isolation.get("passed") == isolation.get("total_tests") else "PARTIAL",
+                "passed": isolation.get("passed", 0),
+                "total": isolation.get("total_tests", 0)
+            })
+
+        # Analyze tier1 features
+        tier1 = self.data["tier1_features"]
+        if tier1.get("status") == "SUCCESS":
+            summary["test_suites"].append({
+                "name": "Tier 1 Features",
+                "status": "PASS" if tier1.get("passed") == tier1.get("total_features") else "PARTIAL",
+                "passed": tier1.get("passed", 0),
+                "total": tier1.get("total_features", 0)
+            })
+
         # Check for failures
         for suite in summary["test_suites"]:
             if suite["status"] != "PASS":
@@ -304,11 +381,39 @@ class DashboardDataProcessor:
             f.write(self.to_json())
         print(f"Dashboard data saved to {filepath}")
 
+    def embed_offline_snapshots(self, base_dir: str = ".") -> None:
+        """Embed the current data as a fallback snapshot in each dashboard HTML
+        file, so the dashboards also work opened directly (file://) with no
+        local server — see OFFLINE_DASHBOARDS and the loadDashboard() fallback
+        in each file.
+        """
+        # Escape "</script" so embedded JSON can't prematurely close the tag it lives in.
+        snapshot = json.dumps(self.data, default=str).replace("</script", "<\\/script")
+        base = Path(base_dir)
+
+        for filename in OFFLINE_DASHBOARDS:
+            path = base / filename
+            if not path.exists():
+                continue
+
+            html = path.read_text(encoding="utf-8")
+            if not _EMBEDDED_DATA_RE.search(html):
+                print(f"  ⚠ {filename}: no embedded-dashboard-data placeholder found, skipping")
+                continue
+
+            updated = _EMBEDDED_DATA_RE.sub(
+                lambda m: m.group(1) + snapshot + m.group(3), html, count=1
+            )
+            path.write_text(updated, encoding="utf-8")
+            print(f"  ✓ embedded offline snapshot into {filename}")
+
 
 def main():
     """Generate and save dashboard data."""
     processor = DashboardDataProcessor("results")
     processor.save("dashboard_data.json")
+    print("\nEmbedding offline (file://) fallback snapshots...")
+    processor.embed_offline_snapshots(".")
     print("\n" + "=" * 60)
     print("Dashboard Data Summary")
     print("=" * 60)

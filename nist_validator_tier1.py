@@ -121,6 +121,17 @@ class Tier1Validator:
                 "max": max([b.mean_flight_ms for b in profile.bigrams.values()]),
             }
 
+        results["passed"] = (
+            not anomaly_normal["anomaly_detected"]
+            and anomaly_anomalous["anomaly_detected"]
+        )
+        results["description"] = (
+            "Legitimate typing rhythm accepted and 10x-faster impostor typing "
+            "flagged as anomalous"
+            if results["passed"]
+            else "Anomaly detector failed to separate normal from impostor typing"
+        )
+
         self.results["biometric_seal"] = results
         print("\n✓ Biometric Seal validation complete")
         return results
@@ -188,6 +199,17 @@ class Tier1Validator:
             "final_counter": fs_channel2._send_state.message_counter,
             "total_messages": fs_channel2._total_messages_sent,
         }
+
+        results["passed"] = (
+            len(keys_by_epoch) > 1
+            and len(set(epoch_hex_values.values())) == len(epoch_hex_values)
+        )
+        results["description"] = (
+            f"{len(keys_by_epoch)} ratchet epochs produced, all session keys "
+            "mutually independent (forward secrecy holds)"
+            if results["passed"]
+            else "Ratchet did not advance epochs or produced duplicate session keys"
+        )
 
         self.results["double_ratchet"] = results
         print("\n✓ Double Ratchet validation complete")
@@ -270,6 +292,17 @@ class Tier1Validator:
             "test_sizes": test_sizes,
             "emoji_expansion_ratio": len(EmojiSteganography.encode_ciphertext(bytes(1024))) / 1024,
         }
+
+        results["passed"] = (
+            recovered == secret
+            and results["tests"]["emoji_steganography"]["unique_selectors"] > 1
+        )
+        results["description"] = (
+            "Zero-width payload recovered exactly and emoji variant-selector "
+            "encoding uses a diverse selector range"
+            if results["passed"]
+            else "Zero-width recovery failed or emoji selector encoding is degenerate"
+        )
 
         self.results["steganography"] = results
         print("\n✓ Steganography validation complete")

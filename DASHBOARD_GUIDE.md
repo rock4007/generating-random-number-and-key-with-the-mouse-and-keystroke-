@@ -82,6 +82,7 @@ Browser Visualization
 | Research Evidence | `results/research_evidence.json` | After research validation |
 | MOAT Tests | `results/moat_report.json` | After MOAT run |
 | Tier 1 Features | `results/tier1_validation_report.json` | After feature tests |
+| Isolation Tests (sandbox/blackbox/identity, two-party isolation) | `results/isolation_tests_report.json` | After `scripts/isolation_tests_report.py` |
 
 ---
 
