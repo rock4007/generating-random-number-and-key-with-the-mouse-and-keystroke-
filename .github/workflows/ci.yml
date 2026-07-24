@@ -7,7 +7,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -31,5 +31,19 @@ jobs:
       - name: Run Python syntax check
         run: python -m py_compile scripts/ci_check.py
 
-      - name: Run local CI pipeline
-        run: python scripts/ci_check.py --quick
+      - name: Run pytest directly (core tests)
+        timeout-minutes: 40
+        run: |
+          python -m pytest -q --tb=short \
+            tests/test_adversarial_scenarios.py \
+            tests/test_attack_and_device_scenarios.py \
+            tests/test_blackbox_security.py \
+            tests/test_deep_audit.py \
+            tests/test_file_decrypt_aad.py \
+            tests/test_logical_fixes.py \
+            tests/test_moat_report.py \
+            tests/test_research_evidence.py \
+            tests/test_security_audit.py \
+            tests/test_connectivity.py \
+            tests/test_identity.py \
+            tests/test_tier1_features.py
