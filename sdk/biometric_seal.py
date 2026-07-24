@@ -233,6 +233,7 @@ class KeystrokeProfile:
     @classmethod
     def from_dict(cls, data: dict) -> KeystrokeProfile:
         """Deserialize profile from persistent storage."""
+        import ast
         profile = cls(
             user_id=data["user_id"],
             platform=data["platform"],
@@ -243,8 +244,8 @@ class KeystrokeProfile:
             max_flight_ms=data.get("max_flight_ms", 0.0),
         )
         for k_str, stats_dict in data.get("bigrams", {}).items():
-            # Parse key pair back from string
-            key_i, key_j = eval(k_str)  # Safe here; we control serialization
+            # Parse key pair back from string using ast.literal_eval for security
+            key_i, key_j = ast.literal_eval(k_str)  # Safe: only parses Python literals
             stats = BigramStats(key_pair=(key_i, key_j))
             stats.count = stats_dict["count"]
             stats.mean_flight_ms = stats_dict["mean_flight_ms"]

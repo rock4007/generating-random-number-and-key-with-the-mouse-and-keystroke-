@@ -238,9 +238,20 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # CORS: Allow only localhost and optionally CORS_ORIGINS env var
 cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
+# Validate CORS origins to prevent misconfiguration
+validated_origins = []
+for origin in cors_origins:
+    origin = origin.strip()
+    if origin and (origin.startswith("http://localhost:") or origin.startswith("https://") or origin.startswith("http://127.0.0.1:")):
+        validated_origins.append(origin)
+    elif origin:
+        log.warning(f"Skipping invalid CORS origin: {origin}")
+if not validated_origins:
+    validated_origins = ["http://localhost:3000", "http://localhost:8000"]
+    log.warning("No valid CORS origins configured; using defaults")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=validated_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "Authorization"],
@@ -1110,7 +1121,7 @@ def debug_pipeline_synthetic(
         "pipeline": {
             "all_stages_passed": pipeline_result["all_passed"],
             "stages_run": pipeline_result["stages"],
-            "key_hex": pipeline_result["key_hex"],
+            "key_fingerprint": "fp:" + pipeline_result["key_hex"][:16],
             "key_bits": pipeline_result["key_bits"],
             "random_number": pipeline_result["random_number"],
         },

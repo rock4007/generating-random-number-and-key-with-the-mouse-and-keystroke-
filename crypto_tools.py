@@ -734,8 +734,8 @@ def quantum_encryption_info() -> dict[str, Any]:
         "file_magic": MAGIC_QS.decode("latin1"),
         "defense_in_depth": (
             "Session key = HKDF(KEM_shared ‖ Argon2id_hardened). "
-            "Breaking KEM alone: attacker still needs Argon2id blob (stored in pkg, memory-hard). "
-            "Reproducing behaviour alone: attacker still needs ML-KEM dk."
+            "The bundled Argon2id output binds sender-side behavioural entropy into package construction. "
+            "Decryption authority is still the ML-KEM dk; reproducing behaviour alone is not enough."
         ),
     }
 

@@ -86,17 +86,23 @@ class ThreatLogger:
             return self.ip_violation_count[ip] > self.VIOLATIONS_PER_IP_THRESHOLD
 
     def get_stats(self) -> dict[str, Any]:
-        """Return threat stats (total events, blocked IPs, etc.)."""
+        """Return threat stats (total events, blocked IPs, etc.).
+
+        Uses a direct predicate instead of calling is_ip_blocked() to avoid
+        mutating ip_violation_count as a side effect during iteration.
+        """
         with self.lock:
+            now = time.time()
             blocked_ips = [
-                ip for ip in self.ip_violation_count
-                if self.is_ip_blocked(ip)
+                ip for ip, count in self.ip_violation_count.items()
+                if count > self.VIOLATIONS_PER_IP_THRESHOLD
+                and (now - self.ip_last_threat.get(ip, 0)) <= self.THREAT_WINDOW_SECONDS
             ]
             return {
                 "total_threat_events": len(self.threat_events),
                 "blocked_ips_count": len(blocked_ips),
                 "blocked_ips": blocked_ips,
-                "recent_threats": self.threat_events[-10:],  # Last 10
+                "recent_threats": list(self.threat_events[-10:]),
             }
 
 

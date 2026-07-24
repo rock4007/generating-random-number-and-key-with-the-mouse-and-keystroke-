@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SUMIT KEY - NIST 800-90B Test Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111316;
+      --panel: #1b2026;
+      --panel-2: #222932;
+      --text: #ecf2f8;
+      --muted: #9ba8b6;
+      --line: #343d49;
+      --good: #4fc07a;
+      --warn: #f0b74d;
+      --bad: #ef6b73;
+      --info: #62a8ea;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 2px solid var(--info);
+      padding: 24px;
+      margin-bottom: 32px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      color: var(--info);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .test-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--info);
+      padding-left: 12px;
+    }
+
+    .test-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .test-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .test-card.pass {
+      border-left: 4px solid var(--good);
+    }
+
+    .test-card.fail {
+      border-left: 4px solid var(--bad);
+    }
+
+    .test-name {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .test-detail {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 4px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .badge.pass {
+      background: rgba(79, 192, 122, 0.2);
+      color: var(--good);
+    }
+
+    .badge.fail {
+      background: rgba(239, 107, 115, 0.2);
+      color: var(--bad);
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric:last-child {
+      border-bottom: none;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--panel-2);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--info), var(--good));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .summary-box {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--info);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th {
+      background: var(--panel-2);
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 2px solid var(--line);
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    tr:hover {
+      background: rgba(98, 168, 234, 0.05);
+    }
+
+    .status-pass {
+      color: var(--good);
+      font-weight: 600;
+    }
+
+    .status-fail {
+      color: var(--bad);
+      font-weight: 600;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      display: inline-block;
+      padding: 8px 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--info);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: var(--info);
+      color: var(--bg);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔐 NIST 800-90B Compliance Dashboard</h1>
+      <p class="subtitle">Behavioral Entropy Source Validation</p>
+      <div class="nav-links">
+        <a href="dashboard.html">← Main Dashboard</a>
+        <a href="dashboard-entropy.html">Entropy Tests →</a>
+        <a href="dashboard-mouse.html">Mouse Tests →</a>
+      </div>
+    </header>
+
+    <div class="test-section">
+      <div class="section-title">🧪 Health Tests (Continuous Online)</div>
+      <div class="summary-box">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-value" id="health-total">0</div>
+            <div class="stat-label">Total Tests</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="health-passed">0</div>
+            <div class="stat-label">Passed</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="health-pass-rate">0%</div>
+            <div class="stat-label">Pass Rate</div>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="health-progress"></div>
+        </div>
+      </div>
+      <div class="test-group" id="health-tests"></div>
+    </div>
+
+    <div class="test-section">
+      <div class="section-title">📊 IID Tests (Statistical Validation)</div>
+      <div class="summary-box">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-value" id="iid-total">0</div>
+            <div class="stat-label">Total Tests</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="iid-passed">0</div>
+            <div class="stat-label">Passed</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="iid-pass-rate">0%</div>
+            <div class="stat-label">Pass Rate</div>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="iid-progress"></div>
+        </div>
+      </div>
+      <div class="test-group" id="iid-tests"></div>
+    </div>
+
+    <div class="test-section">
+      <div class="section-title">🔬 Detailed Results</div>
+      <table id="detailed-table">
+        <thead>
+          <tr>
+            <th>Test Name</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Load and display NIST test data
+    async function loadDashboard() {
+      try {
+        const response = await fetch('dashboard_data.json');
+        const data = await response.json();
+        const nistData = data.nist_800_90b;
+
+        if (nistData.status !== 'SUCCESS') {
+          document.body.innerHTML = '<p>Unable to load NIST data</p>';
+          return;
+        }
+
+        let healthTotal = 0, healthPassed = 0;
+        let iidTotal = 0, iidPassed = 0;
+        const healthHtml = [], iidHtml = [];
+        const tableRows = [];
+
+        // Process each entropy source
+        for (const [sourceName, sourceData] of Object.entries(nistData.sources)) {
+          // Health tests
+          const health = sourceData.online_health;
+          healthTotal += health.total;
+          healthPassed += health.passed;
+
+          health.tests.forEach(test => {
+            const status = test.passed ? 'pass' : 'fail';
+            healthHtml.push(`
+              <div class="test-card ${status}">
+                <div class="test-name">${test.test}</div>
+                <div class="test-detail">Source: ${sourceName}</div>
+                <div class="test-detail">${test.detail}</div>
+                <span class="badge ${status}">${test.passed ? '✓ PASS' : '✗ FAIL'}</span>
+              </div>
+            `);
+            tableRows.push([test.test, 'Health', test.passed ? '✓ PASS' : '✗ FAIL', test.detail]);
+          });
+
+          // IID tests
+          const iid = sourceData.iid_tests;
+          iidTotal += iid.total;
+          iidPassed += iid.passed;
+
+          iid.tests.forEach(test => {
+            const status = test.passed ? 'pass' : 'fail';
+            const pValue = test.p_value !== null ? `p=${test.p_value.toFixed(4)}` : '';
+            iidHtml.push(`
+              <div class="test-card ${status}">
+                <div class="test-name">${test.name}</div>
+                <div class="test-detail">Source: ${sourceName}</div>
+                <div class="test-detail">Statistic: ${test.statistic?.toFixed(2) || 'N/A'}</div>
+                <div class="test-detail">${pValue}</div>
+                <span class="badge ${status}">${test.passed ? '✓ PASS' : '✗ FAIL'}</span>
+              </div>
+            `);
+            tableRows.push([test.name, 'IID', test.passed ? '✓ PASS' : '✗ FAIL', pValue]);
+          });
+        }
+
+        // Update UI
+        document.getElementById('health-tests').innerHTML = healthHtml.join('');
+        document.getElementById('health-total').textContent = healthTotal;
+        document.getElementById('health-passed').textContent = healthPassed;
+        const healthRate = healthTotal ? (healthPassed / healthTotal * 100).toFixed(0) : 0;
+        document.getElementById('health-pass-rate').textContent = healthRate + '%';
+        document.getElementById('health-progress').style.width = healthRate + '%';
+
+        document.getElementById('iid-tests').innerHTML = iidHtml.join('');
+        document.getElementById('iid-total').textContent = iidTotal;
+        document.getElementById('iid-passed').textContent = iidPassed;
+        const iidRate = iidTotal ? (iidPassed / iidTotal * 100).toFixed(0) : 0;
+        document.getElementById('iid-pass-rate').textContent = iidRate + '%';
+        document.getElementById('iid-progress').style.width = iidRate + '%';
+
+        // Update table
+        const tableBody = document.getElementById('table-body');
+        tableRows.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row[0]}</td>
+            <td>${row[1]}</td>
+            <td class="${row[2].includes('PASS') ? 'status-pass' : 'status-fail'}">${row[2]}</td>
+            <td>${row[3]}</td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

@@ -62,6 +62,31 @@ OUT OF OR IN CONNECTION WITH THE FILES OR THE USE OR OTHER DEALINGS IN THE
 FILES.
 
 ===============================================================================
+PART C — THIRD-PARTY LICENSES
+===============================================================================
+
+This project depends on third-party open-source packages listed in
+requirements.txt. Full license text, versions, and a per-package compliance
+review are maintained in licenses/THIRD_PARTY_LICENSES.md.
+
+Notably:
+
+  PYNPUT (https://github.com/moses-palmer/pynput)
+    License: GNU Lesser General Public License v3.0 (LGPL-3.0)
+    Copyright (c) 2016 Moses Palmer
+    Full license text: https://github.com/moses-palmer/pynput/blob/master/COPYING.LGPL
+    Used unmodified via pip install for mouse/keyboard capture (capture.py).
+    Users may substitute a modified or alternate pynput version in their own
+    environment; no static linking is performed.
+
+  PYTHON-XLIB (https://github.com/python-xlib/python-xlib)
+    License: GNU Lesser General Public License v2.1-or-later (LGPL-2.1+)
+    Pulled in transitively by pynput as its X11 backend on Linux desktops.
+
+No GPL or AGPL (strong copyleft) dependency is present anywhere in this
+project's dependency tree.
+
+===============================================================================
 IMPORTANT — Repository Visibility
 ===============================================================================
 

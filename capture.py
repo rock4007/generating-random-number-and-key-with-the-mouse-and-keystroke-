@@ -55,8 +55,11 @@ def _capture_mouse_evdev(duration_seconds: float) -> list[dict[str, Any]]:
             caps = dev.capabilities()
             if ecodes.EV_REL in caps and ecodes.REL_X in caps.get(ecodes.EV_REL, []):
                 mice.append(dev)
-        except Exception:
-            pass
+        except (OSError, IOError, PermissionError) as e:
+            # Device access error; skip this device and continue
+            import logging
+            logging.debug(f"evdev: skipping {path} due to {type(e).__name__}: {e}")
+            continue
 
     if not mice:
         raise RuntimeError(

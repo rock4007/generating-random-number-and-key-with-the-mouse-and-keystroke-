@@ -1,0 +1,561 @@
+{
+  "timestamp": "2026-07-24T05:46:42.835637",
+  "nist_800_90b": {
+    "status": "SUCCESS",
+    "sources": {
+      "OS CSPRNG Baseline": {
+        "online_health": {
+          "total": 2,
+          "passed": 2,
+          "tests": [
+            {
+              "test": "RCT (Repetition Count Test \u00a74.4.1)",
+              "passed": true,
+              "detail": "longest same-byte run = 2, cutoff = 64"
+            },
+            {
+              "test": "APT (Adaptive Proportion Test \u00a74.4.2)",
+              "passed": true,
+              "detail": "worst window at byte 10752: reference count = 6, cutoff = 325"
+            }
+          ]
+        },
+        "iid_tests": {
+          "total": 14,
+          "passed": 14,
+          "tests": [
+            {
+              "name": "Chi-Squared Uniformity (\u00a75.2)",
+              "passed": true,
+              "p_value": 0.9317631046607374,
+              "statistic": 222.21875
+            },
+            {
+              "name": "Excursion (\u00a75.1 T1)",
+              "passed": true,
+              "p_value": 0.274,
+              "statistic": 9391.007446289062
+            },
+            {
+              "name": "Directional Runs Count (\u00a75.1 T2)",
+              "passed": true,
+              "p_value": 0.205,
+              "statistic": 10947
+            },
+            {
+              "name": "Directional Run Length (\u00a75.1 T3)",
+              "passed": true,
+              "p_value": 0.273,
+              "statistic": 7
+            },
+            {
+              "name": "Increases Count (\u00a75.1 T4)",
+              "passed": true,
+              "p_value": 0.06,
+              "statistic": 8216
+            },
+            {
+              "name": "Median Runs Count (\u00a75.1 T5)",
+              "passed": true,
+              "p_value": 0.063,
+              "statistic": 8292
+            },
+            {
+              "name": "Median Run Length (\u00a75.1 T6)",
+              "passed": true,
+              "p_value": 0.7475,
+              "statistic": 13
+            },
+            {
+              "name": "Avg Collision Distance (\u00a75.1 T7)",
+              "passed": true,
+              "p_value": 0.747,
+              "statistic": 251.80071924603175
+            },
+            {
+              "name": "Max Collision Distance (\u00a75.1 T8)",
+              "passed": true,
+              "p_value": 0.301,
+              "statistic": 2675.0
+            },
+            {
+              "name": "Periodicity w=1 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.7745,
+              "statistic": 58
+            },
+            {
+              "name": "Periodicity w=8 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.8615,
+              "statistic": 55
+            },
+            {
+              "name": "Covariance w=1 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.965,
+              "statistic": 268930931.0
+            },
+            {
+              "name": "Covariance w=8 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.758,
+              "statistic": 269559958.0
+            },
+            {
+              "name": "Compression Ratio (\u00a75.1 T11)",
+              "passed": true,
+              "p_value": 0.515,
+              "statistic": 1.00067138671875
+            }
+          ]
+        }
+      },
+      "Weak LCG PRNG [negative control]": {
+        "online_health": {
+          "total": 2,
+          "passed": 2,
+          "tests": [
+            {
+              "test": "RCT (Repetition Count Test \u00a74.4.1)",
+              "passed": true,
+              "detail": "longest same-byte run = 2, cutoff = 64"
+            },
+            {
+              "test": "APT (Adaptive Proportion Test \u00a74.4.2)",
+              "passed": true,
+              "detail": "worst window at byte 1024: reference count = 5, cutoff = 325"
+            }
+          ]
+        },
+        "iid_tests": {
+          "total": 14,
+          "passed": 14,
+          "tests": [
+            {
+              "name": "Chi-Squared Uniformity (\u00a75.2)",
+              "passed": true,
+              "p_value": 0.3122480960040276,
+              "statistic": 265.53125
+            },
+            {
+              "name": "Excursion (\u00a75.1 T1)",
+              "passed": true,
+              "p_value": 0.458,
+              "statistic": 7921.44091796875
+            },
+            {
+              "name": "Directional Runs Count (\u00a75.1 T2)",
+              "passed": true,
+              "p_value": 0.4055,
+              "statistic": 10915
+            },
+            {
+              "name": "Directional Run Length (\u00a75.1 T3)",
+              "passed": true,
+              "p_value": 0.7425,
+              "statistic": 6
+            },
+            {
+              "name": "Increases Count (\u00a75.1 T4)",
+              "passed": true,
+              "p_value": 0.603,
+              "statistic": 8149
+            },
+            {
+              "name": "Median Runs Count (\u00a75.1 T5)",
+              "passed": true,
+              "p_value": 0.2635,
+              "statistic": 8236
+            },
+            {
+              "name": "Median Run Length (\u00a75.1 T6)",
+              "passed": true,
+              "p_value": 0.9145,
+              "statistic": 12
+            },
+            {
+              "name": "Avg Collision Distance (\u00a75.1 T7)",
+              "passed": true,
+              "p_value": 0.3475,
+              "statistic": 252.05536954365078
+            },
+            {
+              "name": "Max Collision Distance (\u00a75.1 T8)",
+              "passed": true,
+              "p_value": 0.7455,
+              "statistic": 2363.0
+            },
+            {
+              "name": "Periodicity w=1 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.0145,
+              "statistic": 81
+            },
+            {
+              "name": "Periodicity w=8 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.3785,
+              "statistic": 66
+            },
+            {
+              "name": "Covariance w=1 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.557,
+              "statistic": 264917369.0
+            },
+            {
+              "name": "Covariance w=8 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.582,
+              "statistic": 264770673.0
+            },
+            {
+              "name": "Compression Ratio (\u00a75.1 T11)",
+              "passed": true,
+              "p_value": 0.5155,
+              "statistic": 1.00067138671875
+            }
+          ]
+        }
+      },
+      "SUMIT KEY Behavioural Entropy": {
+        "online_health": {
+          "total": 2,
+          "passed": 2,
+          "tests": [
+            {
+              "test": "RCT (Repetition Count Test \u00a74.4.1)",
+              "passed": true,
+              "detail": "longest same-byte run = 2, cutoff = 64"
+            },
+            {
+              "test": "APT (Adaptive Proportion Test \u00a74.4.2)",
+              "passed": true,
+              "detail": "worst window at byte 5120: reference count = 5, cutoff = 325"
+            }
+          ]
+        },
+        "iid_tests": {
+          "total": 14,
+          "passed": 14,
+          "tests": [
+            {
+              "name": "Chi-Squared Uniformity (\u00a75.2)",
+              "passed": true,
+              "p_value": 0.7358974983601981,
+              "statistic": 240.375
+            },
+            {
+              "name": "Excursion (\u00a75.1 T1)",
+              "passed": true,
+              "p_value": 0.703,
+              "statistic": 6625.54296875
+            },
+            {
+              "name": "Directional Runs Count (\u00a75.1 T2)",
+              "passed": true,
+              "p_value": 0.071,
+              "statistic": 10977
+            },
+            {
+              "name": "Directional Run Length (\u00a75.1 T3)",
+              "passed": true,
+              "p_value": 0.2755,
+              "statistic": 7
+            },
+            {
+              "name": "Increases Count (\u00a75.1 T4)",
+              "passed": true,
+              "p_value": 0.128,
+              "statistic": 8201
+            },
+            {
+              "name": "Median Runs Count (\u00a75.1 T5)",
+              "passed": true,
+              "p_value": 0.553,
+              "statistic": 8183
+            },
+            {
+              "name": "Median Run Length (\u00a75.1 T6)",
+              "passed": true,
+              "p_value": 0.5355,
+              "statistic": 14
+            },
+            {
+              "name": "Avg Collision Distance (\u00a75.1 T7)",
+              "passed": true,
+              "p_value": 0.031,
+              "statistic": 252.40128968253967
+            },
+            {
+              "name": "Max Collision Distance (\u00a75.1 T8)",
+              "passed": true,
+              "p_value": 0.154,
+              "statistic": 2843.0
+            },
+            {
+              "name": "Periodicity w=1 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.9375,
+              "statistic": 52
+            },
+            {
+              "name": "Periodicity w=8 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.3255,
+              "statistic": 67
+            },
+            {
+              "name": "Covariance w=1 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.644,
+              "statistic": 267520999.0
+            },
+            {
+              "name": "Covariance w=8 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.675,
+              "statistic": 267402912.0
+            },
+            {
+              "name": "Compression Ratio (\u00a75.1 T11)",
+              "passed": true,
+              "p_value": 0.5145,
+              "statistic": 1.00067138671875
+            }
+          ]
+        }
+      },
+      "SUMIT KEY HKDF Output (64 keys \u00d7 256 bits)": {
+        "online_health": {
+          "total": 2,
+          "passed": 2,
+          "tests": [
+            {
+              "test": "RCT (Repetition Count Test \u00a74.4.1)",
+              "passed": true,
+              "detail": "longest same-byte run = 2, cutoff = 64"
+            },
+            {
+              "test": "APT (Adaptive Proportion Test \u00a74.4.2)",
+              "passed": true,
+              "detail": "worst window at byte 1536: reference count = 4, cutoff = 325"
+            }
+          ]
+        },
+        "iid_tests": {
+          "total": 14,
+          "passed": 14,
+          "tests": [
+            {
+              "name": "Chi-Squared Uniformity (\u00a75.2)",
+              "passed": true,
+              "p_value": 0.9232053413579782,
+              "statistic": 223.5
+            },
+            {
+              "name": "Excursion (\u00a75.1 T1)",
+              "passed": true,
+              "p_value": 0.879,
+              "statistic": 1921.00390625
+            },
+            {
+              "name": "Directional Runs Count (\u00a75.1 T2)",
+              "passed": true,
+              "p_value": 0.145,
+              "statistic": 1381
+            },
+            {
+              "name": "Directional Run Length (\u00a75.1 T3)",
+              "passed": true,
+              "p_value": 0.2965,
+              "statistic": 6
+            },
+            {
+              "name": "Increases Count (\u00a75.1 T4)",
+              "passed": true,
+              "p_value": 0.854,
+              "statistic": 1007
+            },
+            {
+              "name": "Median Runs Count (\u00a75.1 T5)",
+              "passed": true,
+              "p_value": 0.176,
+              "statistic": 1046
+            },
+            {
+              "name": "Median Run Length (\u00a75.1 T6)",
+              "passed": true,
+              "p_value": 0.04,
+              "statistic": 15
+            },
+            {
+              "name": "Avg Collision Distance (\u00a75.1 T7)",
+              "passed": true,
+              "p_value": 0.297,
+              "statistic": 222.52901785714286
+            },
+            {
+              "name": "Max Collision Distance (\u00a75.1 T8)",
+              "passed": true,
+              "p_value": 0.1905,
+              "statistic": 1671.0
+            },
+            {
+              "name": "Periodicity w=1 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.8515,
+              "statistic": 5
+            },
+            {
+              "name": "Periodicity w=8 (\u00a75.1 T9)",
+              "passed": true,
+              "p_value": 0.917,
+              "statistic": 4
+            },
+            {
+              "name": "Covariance w=1 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.801,
+              "statistic": 32237213.0
+            },
+            {
+              "name": "Covariance w=8 (\u00a75.1 T10)",
+              "passed": true,
+              "p_value": 0.079,
+              "statistic": 32633906.0
+            },
+            {
+              "name": "Compression Ratio (\u00a75.1 T11)",
+              "passed": true,
+              "p_value": 0.5,
+              "statistic": 1.00537109375
+            }
+          ]
+        }
+      }
+    },
+    "total_sources": 4
+  },
+  "entropy_tests": {
+    "status": "EMPTY"
+  },
+  "research_evidence": {
+    "status": "SUCCESS",
+    "claim_matrix": {
+      "total": 7,
+      "passed": 3,
+      "claim_count": 3
+    },
+    "experiments": {
+      "behavioral_kdf": {
+        "name": "behavioral_kdf",
+        "passed": true,
+        "description": "BEHAVE-KDF additive-output evidence across behavioral quality scenarios."
+      },
+      "ghost_once": {
+        "name": "ghost_once",
+        "passed": true,
+        "description": "Ghost package opens once and is then unavailable."
+      },
+      "platform_replay": {
+        "name": "platform_replay",
+        "passed": true,
+        "description": "WhatsApp ciphertext cannot be replayed as Telegram context."
+      }
+    }
+  },
+  "moat_report": {
+    "status": "SUCCESS",
+    "total_tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "tests": [
+      {
+        "id": "human_session_kdf",
+        "name": "Human-session KDF",
+        "passed": true,
+        "duration_ms": "n/a",
+        "thesis": "Live behavior is additive cryptographic input, never the only secret."
+      },
+      {
+        "id": "ghost_handoff",
+        "name": "Volunteer ghost handoff",
+        "passed": true,
+        "duration_ms": "n/a",
+        "thesis": "A portable package opens once, burns its key, and states its boundary honestly."
+      },
+      {
+        "id": "platform_bound_encryption",
+        "name": "Platform-bound personal encryption",
+        "passed": true,
+        "duration_ms": "n/a",
+        "thesis": "Apps become untrusted pipes; platform/context replay fails."
+      },
+      {
+        "id": "claim_hygiene",
+        "name": "Claim hygiene",
+        "passed": true,
+        "duration_ms": "n/a",
+        "thesis": "Every public claim maps to code, tests, limits, and validation status."
+      },
+      {
+        "id": "reproducible_evidence",
+        "name": "Reproducible evidence pipeline",
+        "passed": true,
+        "duration_ms": "n/a",
+        "thesis": "The moat can be regenerated by scripts and checked in CI."
+      }
+    ]
+  },
+  "tier1_features": {
+    "status": "SUCCESS",
+    "total_features": 3,
+    "passed": 0,
+    "features": {
+      "biometric_seal": {
+        "passed": false,
+        "description": "",
+        "test_count": 3
+      },
+      "double_ratchet": {
+        "passed": false,
+        "description": "",
+        "test_count": 2
+      },
+      "steganography": {
+        "passed": false,
+        "description": "",
+        "test_count": 3
+      }
+    }
+  },
+  "summary": {
+    "overall_status": "PASS",
+    "test_suites": [
+      {
+        "name": "NIST 800-90B",
+        "status": "PASS",
+        "passed": 64,
+        "total": 64
+      },
+      {
+        "name": "Research Evidence",
+        "status": "PASS",
+        "passed": 3,
+        "total": 3
+      },
+      {
+        "name": "MOAT Tests",
+        "status": "PASS",
+        "passed": 5,
+        "total": 5
+      }
+    ],
+    "critical_issues": 0,
+    "warnings": 0,
+    "last_updated": "2026-07-24T05:46:42.835637"
+  }
+}

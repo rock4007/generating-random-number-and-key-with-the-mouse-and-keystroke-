@@ -337,7 +337,7 @@ class DashboardAndNistObjections(unittest.TestCase):
     def test_netlify_deploy_publishes_only_static_dashboard(self) -> None:
         config = Path("netlify.toml").read_text(encoding="utf-8")
         self.assertIn('publish = "dist"', config)
-        self.assertIn("dashboard.html dist/index.html", config)
+        self.assertIn("dashboard-complete.html dist/index.html", config)
         self.assertIn("dashboard.html dist/dashboard.html", config)
         self.assertIn("404.html dist/404.html", config)
 

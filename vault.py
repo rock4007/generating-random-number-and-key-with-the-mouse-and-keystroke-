@@ -415,19 +415,23 @@ class HighVoltageVault:
 
         # Decrypt requested shards (outside lock for speed)
         decrypted_shares: list[tuple[int, bytes]] = []
-        for x in shard_xs[: entry.threshold]:
-            if x not in entry.shards:
-                raise KeyError(f"Shard {x} not found in vault {vault_id!r}")
-            sk = self._shard_key(vault_id, x, master_password)
-            nonce = entry.shard_nonces[x]
-            ct = entry.shards[x]
-            try:
-                y_bytes = self._decrypt_shard(sk, nonce, ct)
-            except Exception as exc:
-                with self._lock:
+        try:
+            for x in shard_xs[: entry.threshold]:
+                if x not in entry.shards:
+                    raise KeyError(f"Shard {x} not found in vault {vault_id!r}")
+                sk = self._shard_key(vault_id, x, master_password)
+                nonce = entry.shard_nonces[x]
+                ct = entry.shards[x]
+                try:
+                    y_bytes = self._decrypt_shard(sk, nonce, ct)
+                except Exception as exc:
+                    raise PermissionError(f"Shard {x} decryption failed: {exc}") from exc
+                decrypted_shares.append((x, y_bytes))
+        except Exception:
+            with self._lock:
+                if entry.state == VaultState.HOT:
                     entry.state = VaultState.ARMED
-                raise PermissionError(f"Shard {x} decryption failed: {exc}") from exc
-            decrypted_shares.append((x, y_bytes))
+            raise
 
         secret = shamir_combine(decrypted_shares)
 
@@ -810,6 +814,7 @@ class AdvancedThreatDetector:
         self._lock = threading.Lock()
         self._PROBE_WINDOW = 60.0      # seconds
         self._PROBE_THRESHOLD = 20     # requests per window before flagging
+        self._REPLAY_TTL = 3600.0      # seconds to remember seen message IDs
 
     def _probe_score(self, source_ip: str) -> tuple[int, str]:
         now = time.time()
@@ -830,6 +835,10 @@ class AdvancedThreatDetector:
             return 0, ""
         now = time.time()
         with self._lock:
+            # Evict expired entries to bound memory
+            stale = [k for k, ts in self._replay_seen.items() if now - ts > self._REPLAY_TTL]
+            for k in stale:
+                del self._replay_seen[k]
             if message_id in self._replay_seen:
                 age = now - self._replay_seen[message_id]
                 return 80, f"replay of msg_id {message_id!r} seen {age:.1f}s ago"

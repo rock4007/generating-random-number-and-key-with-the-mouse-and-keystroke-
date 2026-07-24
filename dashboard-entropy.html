@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SUMIT KEY - Entropy Tests Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111316;
+      --panel: #1b2026;
+      --panel-2: #222932;
+      --text: #ecf2f8;
+      --muted: #9ba8b6;
+      --line: #343d49;
+      --good: #4fc07a;
+      --warn: #f0b74d;
+      --bad: #ef6b73;
+      --info: #62a8ea;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 2px solid var(--good);
+      padding: 24px;
+      margin-bottom: 32px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      color: var(--good);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--good);
+      padding-left: 12px;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .metric-card {
+      background: var(--panel-2);
+      border-radius: 6px;
+      padding: 16px;
+      border: 1px solid var(--line);
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--info);
+    }
+
+    .chart-container {
+      background: var(--panel-2);
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 16px;
+    }
+
+    .bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .bar-label {
+      width: 120px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 24px;
+      background: var(--panel);
+      border-radius: 4px;
+      margin: 0 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--good), var(--info));
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .bar-value {
+      width: 60px;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .research-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .research-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 16px;
+    }
+
+    .research-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .research-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .badge.pass {
+      background: rgba(79, 192, 122, 0.2);
+      color: var(--good);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      display: inline-block;
+      padding: 8px 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--good);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: var(--good);
+      color: var(--bg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    th {
+      background: var(--panel-2);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    tr:hover {
+      background: rgba(79, 192, 122, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Entropy Tests & Quality Dashboard</h1>
+      <p class="subtitle">Per-Movement Entropy Analysis & BEHAVE-KDF Validation</p>
+      <div class="nav-links">
+        <a href="dashboard.html">← Main Dashboard</a>
+        <a href="dashboard-nist.html">← NIST Tests</a>
+        <a href="dashboard-mouse.html">Mouse Tests →</a>
+      </div>
+    </header>
+
+    <div class="section">
+      <div class="section-title">📈 Entropy Metrics</div>
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-label">Min Entropy (bits/byte)</div>
+          <div class="metric-value" id="entropy-min">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Max Entropy (bits/byte)</div>
+          <div class="metric-value" id="entropy-max">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Mean Entropy (bits/byte)</div>
+          <div class="metric-value" id="entropy-mean">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Samples</div>
+          <div class="metric-value" id="entropy-samples">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔬 BEHAVE-KDF Experiments</div>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">
+        Behavioral Entropy Distribution Function validation across different user behavior scenarios
+      </p>
+      <div class="research-grid" id="behave-grid"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🎯 Research Claims Verification</div>
+      <table id="claims-table">
+        <thead>
+          <tr>
+            <th>Claim</th>
+            <th>Description</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="claims-body"></tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🚀 Platform Compatibility</div>
+      <div class="research-grid" id="platform-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadDashboard() {
+      try {
+        const response = await fetch('dashboard_data.json');
+        const data = await response.json();
+
+        // Load entropy data
+        const entropy = data.entropy_tests;
+        if (entropy.status === 'SUCCESS') {
+          const stats = entropy.statistics;
+          document.getElementById('entropy-min').textContent = stats.min_bits_per_byte.toFixed(2);
+          document.getElementById('entropy-max').textContent = stats.max_bits_per_byte.toFixed(2);
+          document.getElementById('entropy-mean').textContent = stats.mean_bits_per_byte.toFixed(2);
+          document.getElementById('entropy-samples').textContent = entropy.sample_count;
+        }
+
+        // Load research evidence
+        const research = data.research_evidence;
+        if (research.status === 'SUCCESS') {
+          const experiments = research.experiments;
+
+          // BEHAVE-KDF section
+          const behaveExps = ['behavioral_kdf'];
+          const behaveHtml = [];
+
+          for (const expName in experiments) {
+            const exp = experiments[expName];
+            const status = exp.passed ? '✓ PASS' : '✗ FAIL';
+            const statusClass = exp.passed ? 'pass' : 'fail';
+
+            behaveHtml.push(`
+              <div class="research-card">
+                <div class="research-title">${exp.name}</div>
+                <div class="research-desc">${exp.description}</div>
+                <span class="badge ${statusClass}">${status}</span>
+              </div>
+            `);
+          }
+
+          document.getElementById('behave-grid').innerHTML = behaveHtml.join('');
+
+          // Claims table
+          const claimsBody = document.getElementById('claims-body');
+          for (const expName in experiments) {
+            const exp = experiments[expName];
+            const tr = document.createElement('tr');
+            const status = exp.passed ? '✓ PASS' : '✗ FAIL';
+            tr.innerHTML = `
+              <td>${exp.name}</td>
+              <td>${exp.description}</td>
+              <td style="color: ${exp.passed ? '#4fc07a' : '#ef6b73'}; font-weight: 600;">${status}</td>
+            `;
+            claimsBody.appendChild(tr);
+          }
+
+          // Platform section
+          const platformExps = ['platform_bound_encryption', 'platform_replay'];
+          const platformHtml = [];
+
+          for (const expName in experiments) {
+            if (expName.includes('platform')) {
+              const exp = experiments[expName];
+              const status = exp.passed ? '✓ PASS' : '✗ FAIL';
+              const statusClass = exp.passed ? 'pass' : 'fail';
+
+              platformHtml.push(`
+                <div class="research-card">
+                  <div class="research-title">${exp.name}</div>
+                  <div class="research-desc">${exp.description}</div>
+                  <span class="badge ${statusClass}">${status}</span>
+                </div>
+              `);
+            }
+          }
+
+          if (platformHtml.length === 0) {
+            platformHtml.push('<p style="color: var(--muted);">No platform-specific tests found</p>');
+          }
+
+          document.getElementById('platform-grid').innerHTML = platformHtml.join('');
+        }
+
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

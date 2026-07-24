@@ -76,7 +76,7 @@ The entropy is not astronomical — that is why OS randomness is always layered 
 - **ML-KEM-1024 (FIPS 203)**: NIST Level 5 — resists Shor's algorithm
 - **Argon2id hardening**: behavioural entropy is memory-hard hardened before use
 - **HKDF-SHA3-512**: derives session key from KEM shared secret + Argon2id output
-- Defense in depth: breaking KEM alone does not reveal the plaintext (Argon2id blob also required); reproducing behaviour alone is not enough (ML-KEM dk also required)
+- Defense in depth: the session key is derived from both KEM output and a memory-hard Argon2id transform of behavioural entropy. In the current portable package format, the Argon2id output is bundled encrypted under the KEM shared secret, so the ML-KEM decapsulation key remains the primary decryption authority.
 
 ### Stack C — Zero-Knowledge + Vault
 - **Schnorr ZKP** (Fiat-Shamir, RFC 3526 Group 14): proves knowledge of behavioural-derived secret without revealing it
@@ -90,7 +90,7 @@ The entropy is not astronomical — that is why OS randomness is always layered 
 
 **Three fixes made during development that are worth highlighting in Q&A:**
 
-1. **Key material never written to disk** — `results/latest_generation.json` stores only a fingerprint (`sha256[:16]`), never the raw `key_hex`. The key stays in memory only.
+1. **Generated reports are redacted** — `results/latest_generation.json` and `results/per_move_generation.json` store only fingerprints and metadata, not raw `key_hex`/binary key output. Some API responses intentionally return `key_hex` for demo decrypt flows, so treat those responses as secrets.
 
 2. **Sensitive data kept out of URLs** — `/generate-and-encrypt`, `/encrypt/rotating-message`, `/decrypt/rotating-message`, and `/encrypt/self-healing-message` all use POST body models. Query parameters appear in server access logs, browser history, and HTTP Referer headers — none of those should contain plaintext messages or device secrets.
 
@@ -124,10 +124,10 @@ The Chrome MV3 extension demonstrates SUMIT KEY with zero server requirements:
 - **PBKDF2-SHA-256, 210,000 iterations** for ghost code key derivation
 - **Presence gating**: user must accumulate score ≥ 40 from mouse/keystroke activity before decryption; bot-like flat motion cannot pass
 - **Ghost code security**: 40-bit random secret travels via a separate channel from the ciphertext — intercepting the package JSON alone decrypts nothing
-- **Burn-after-read**: decrypted plaintext stored only in `chrome.storage.session`, cleared after display
+- **Burn-after-read**: package keys are one-time use; local extension plaintext currently lands in extension storage for display, so production mode should move plaintext display state to `chrome.storage.session` or avoid persistence entirely.
 
 **Key threat model for the extension:**
-- Extension is safe-by-default on offline installs — no network requests unless an API URL is configured
+- Extension is safe-by-default on offline installs — no network requests unless an API URL is configured; its broad page access is used only for presence counts and should be disclosed as a volunteer privacy boundary
 - `manifest.json` uses strict CSP: `script-src 'self'`; no remote scripts
 - The presence score is a UI gate, not a cryptographic commitment (stated limitation)
 
