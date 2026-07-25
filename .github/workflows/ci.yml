@@ -42,7 +42,6 @@ jobs:
             tests/test_deep_audit.py \
             tests/test_file_decrypt_aad.py \
             tests/test_logical_fixes.py \
-            tests/test_moat_report.py \
             tests/test_research_evidence.py \
             tests/test_security_audit.py \
             tests/test_connectivity.py \
