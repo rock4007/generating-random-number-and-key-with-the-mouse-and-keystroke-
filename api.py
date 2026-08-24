@@ -574,6 +574,8 @@ class _GhostEncryptBody(BaseModel):
     message: str
     label: str = "ghost-message"
     ttl_seconds: int = 120
+    recipient_id: str
+    session_id: str
 
 
 class _GhostPackageBody(BaseModel):
@@ -586,6 +588,9 @@ class _GhostPackageBody(BaseModel):
     ciphertext_hex: str
     associated_data_hex: str = ""
     key_fingerprint: str = ""
+    recipient_id: str
+    session_id: str
+    message_id: str
 
 
 @app.post("/encrypt/message", summary="Encrypt a text message with an existing key")
@@ -716,9 +721,13 @@ def ghost_encrypt_endpoint(
     key = os.urandom(32)
     aad = json.dumps(
         {
+            "ghost_id": ghost_id,
+            "recipient_id": body.recipient_id,
+            "session_id": body.session_id,
+            "message_id": message_id,
+            "expires_at": expires_at,
             "label": body.label,
             "mode": "ghost-api",
-            "created_at": time.time(),
         },
         separators=(",", ":"),
     ).encode("utf-8")

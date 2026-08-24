@@ -1,34 +1,168 @@
 "use strict";
 
-let lastMouseAt = 0;
-let lastKeyAt = 0;
+let active = false;
+let mouseEvents = [];
+let keystrokeEvents = [];
+let keyDown = new Map();
+let lastRelease = null;
+let lastMouseSample = 0;
 
-function sendPresence(kind) {
-  chrome.runtime.sendMessage({
-    type: "presence_event",
-    event: {
-      kind,
-      at: Date.now(),
-      url: location.origin,
-    },
-  }, () => {
-    if (chrome.runtime.lastError) {
-      return;
-    }
-  });
+function resetCapture() {
+  mouseEvents = [];
+  keystrokeEvents = [];
+  keyDown = new Map();
+  lastRelease = null;
+  lastMouseSample = 0;
 }
 
-document.addEventListener("mousemove", () => {
-  const now = Date.now();
-  if (now - lastMouseAt < 120) return;
-  lastMouseAt = now;
-  sendPresence("mouse");
-}, { passive: true });
+function nowMs() {
+  return performance.now();
+}
 
-document.addEventListener("keydown", (event) => {
-  if (event.ctrlKey || event.metaKey || event.altKey) return;
-  const now = Date.now();
-  if (now - lastKeyAt < 150) return;
-  lastKeyAt = now;
-  sendPresence("key");
-}, { passive: true });
+function onMouseMove(event) {
+  if (!active) return;
+
+  const t = nowMs();
+
+  if (t - lastMouseSample < 8) {
+    return;
+  }
+
+  lastMouseSample = t;
+
+  mouseEvents.push({
+    x: event.clientX,
+    y: event.clientY,
+    t
+  });
+
+  if (mouseEvents.length > 5000) {
+    mouseEvents.shift();
+  }
+}
+
+function onKeyDown(event) {
+  if (!active) return;
+  if (event.repeat) return;
+
+  keyDown.set(
+    event.code,
+    nowMs()
+  );
+}
+
+function onKeyUp(event) {
+  if (!active) return;
+
+  const release = nowMs();
+  const press = keyDown.get(event.code);
+
+  if (press === undefined) {
+    return;
+  }
+
+  keyDown.delete(event.code);
+
+  const dwell = Math.max(
+    0,
+    release - press
+  );
+
+  const flight =
+    lastRelease === null
+      ? 0
+      : Math.max(
+          0,
+          press - lastRelease
+        );
+
+  lastRelease = release;
+
+  keystrokeEvents.push({
+    dwell_ms: dwell,
+    flight_ms: flight,
+    t: release
+  });
+
+  if (keystrokeEvents.length > 2000) {
+    keystrokeEvents.shift();
+  }
+}
+
+document.addEventListener(
+  "mousemove",
+  onMouseMove,
+  {
+    passive: true
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  onKeyDown,
+  true
+);
+
+document.addEventListener(
+  "keyup",
+  onKeyUp,
+  true
+);
+
+chrome.runtime.onMessage.addListener(
+  (
+    message,
+    _sender,
+    sendResponse
+  ) => {
+
+    if (
+      message.type ===
+      "sumit_capture_start"
+    ) {
+      resetCapture();
+
+      active = true;
+
+      sendResponse({
+        ok: true
+      });
+
+      return;
+    }
+
+    if (
+      message.type ===
+      "sumit_capture_stop"
+    ) {
+      active = false;
+
+      sendResponse({
+        ok: true,
+        capture: {
+          mouse_events:
+            mouseEvents,
+          keystroke_events:
+            keystrokeEvents
+        }
+      });
+
+      resetCapture();
+
+      return;
+    }
+
+    if (
+      message.type ===
+      "sumit_capture_cancel"
+    ) {
+      active = false;
+
+      resetCapture();
+
+      sendResponse({
+        ok: true
+      });
+    }
+  }
+);

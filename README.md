@@ -1,1445 +1,902 @@
 <div align="center">
-  <img src="./docs/images/banner.svg" width="960" alt="SUMIT KEY — Behavioural Entropy Cryptography">
-</div>
+
+# 🔐 SUMIT KEY
+
+### Behavioural Authentication for Secure Messaging
+
+**Mouse-movement and keystroke-timing authentication with ephemeral AES-256-GCM encryption, replay protection and experimental OTP/NFC fallback**
 
 <br/>
 
-<div align="center">
-
-[![Version](https://img.shields.io/badge/version-1.0.0-0ea5e9?style=flat-square)](CHANGELOG.md)
-[![Status](https://img.shields.io/badge/status-stable-22c55e?style=flat-square)]()
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![Tests](https://img.shields.io/badge/tests-346%20passing-22c55e?style=flat-square&logo=pytest&logoColor=white)](#test-suite--346-passing)
-[![Tier 1](https://img.shields.io/badge/Tier%201%20Features-3%20Advanced-7c3aed?style=flat-square)](#tier-1-advanced-security-features)
-[![AES](https://img.shields.io/badge/AES-256--GCM-0ea5e9?style=flat-square)](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-38d.pdf)
-[![ML-KEM](https://img.shields.io/badge/ML--KEM-1024%20FIPS%20203-7c3aed?style=flat-square)](https://csrc.nist.gov/pubs/fips/203/final)
-[![NIST](https://img.shields.io/badge/NIST-SP%20800--22-6366f1?style=flat-square)](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final)
-[![SDK](https://img.shields.io/badge/SDK-1%20dependency-22c55e?style=flat-square)](#sdk-server--4-endpoints-1-dependency)
-[![Security Policy](https://img.shields.io/badge/security%20policy-SECURITY.md-f59e0b?style=flat-square)](SECURITY.md)
+[![Version](https://img.shields.io/badge/version-3.0.0-0ea5e9?style=flat-square)](#versioning)
+[![Status](https://img.shields.io/badge/status-research%20prototype-f59e0b?style=flat-square)](#security-limitations)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square\&logo=python\&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?style=flat-square\&logo=fastapi\&logoColor=white)](https://fastapi.tiangolo.com/)
+[![AES](https://img.shields.io/badge/encryption-AES--256--GCM-0ea5e9?style=flat-square)](https://csrc.nist.gov/pubs/sp/800/38/d/final)
+[![HKDF](https://img.shields.io/badge/KDF-HKDF--SHA256-7c3aed?style=flat-square)](https://www.rfc-editor.org/rfc/rfc5869)
+[![Security Policy](https://img.shields.io/badge/security-SECURITY.md-f59e0b?style=flat-square)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT%20%2F%20Proprietary-d29922?style=flat-square)](#license)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square&logo=github)](.github/CONTRIBUTING.md)
 
 </div>
 
 <br/>
 
 <p align="center">
-<b>Behavioural entropy cryptography: keys derived from how you move and type, with per-user identity binding and transparent end-to-end encryption across any social media, messaging, or cloud storage platform.</b>
+<b>An MSc cybersecurity research prototype combining behavioural authentication with independently generated cryptographic keys in a replay-resistant two-user messaging workflow.</b>
 </p>
+
+> [!IMPORTANT]
+> SUMIT KEY is a controlled academic research prototype. It is not production-ready and should not be used to protect real confidential, financial, medical or legally sensitive information.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Key Concepts](#key-concepts)
-- [Platform Security Model](#platform-security-model)
-- [Quick Start](#quick-start)
-- [Installation & Integration](#installation--integration)
-- [Architecture](#architecture)
-- [Per-User Identity & Channels](#per-user-identity--channels)
-- [Cryptographic Stacks](#cryptographic-stacks)
-- [Entropy Pipeline](#entropy-pipeline)
-- [Platform Integrations](#platform-integrations)
-- [NIST SP 800-22 Validation](#nist-sp-800-22-validation)
-- [Tier 1 Advanced Security Features](#tier-1-advanced-security-features)
-  - [Feature 1: Biometric Channel Seal](#feature-1-biometric-channel-seal--continuous-keystroke-rhythm-authentication)
-  - [Feature 2: Double Ratchet / Forward Secrecy](#feature-2-double-ratchet--forward-secrecy--signal-level-ephemeral-key-agreement)
-  - [Feature 3: Steganographic Envelope Mode](#feature-3-steganographic-envelope-mode--invisible-ciphertext-embedding)
-  - [Test Results](#tier-1-test-results--28-tests-100-pass-rate)
-- [Performance](#performance)
-- [Test Suite — 318 Passing](#test-suite--318-passing)
-- [API Reference](#api-reference)
-- [Error Reference](#error-reference)
-- [Production Deployment](#production-deployment)
-- [Key Material Hygiene](#key-material-hygiene)
-- [Security Limitations](#security-limitations)
-- [Project Layout](#project-layout)
-- [Dependency Matrix](#dependency-matrix)
-- [Versioning](#versioning)
-- [Contributing](#contributing)
-- [Support](#support)
-- [License](#license)
+* [Overview](#overview)
+* [Research Aim and Questions](#research-aim-and-questions)
+* [Key Concepts](#key-concepts)
+* [Security Model](#security-model)
+* [Quick Start](#quick-start)
+* [Architectural Foundation](#architectural-foundation)
+
+  * [Layer 1: Behavioural Capture](#layer-1-behavioural-capture)
+  * [Layer 2: Feature Extraction](#layer-2-feature-extraction)
+  * [Layer 3: Authentication and Replay Control](#layer-3-authentication-and-replay-control)
+  * [Layer 4: KEK and DEK Management](#layer-4-kek-and-dek-management)
+  * [Layer 5: Message Encryption](#layer-5-message-encryption)
+  * [Layer 6: API and Fallback Authentication](#layer-6-api-and-fallback-authentication)
+* [End-to-End Workflow](#end-to-end-workflow)
+* [Installation](#installation)
+* [Configuration](#configuration)
+* [Running the Application](#running-the-application)
+* [API Reference](#api-reference)
+* [Browser Extension](#browser-extension)
+* [Research and Evaluation](#research-and-evaluation)
+* [Testing](#testing)
+* [Threat Model](#threat-model)
+* [Key Material Hygiene](#key-material-hygiene)
+* [Legal, Social, Ethical and Professional Issues](#legal-social-ethical-and-professional-issues)
+* [Security Limitations](#security-limitations)
+* [Project Layout](#project-layout)
+* [Dependency Matrix](#dependency-matrix)
+* [Standards and References](#standards-and-references)
+* [License](#license)
+* [Versioning](#versioning)
+* [Support](#support)
 
 ---
 
 ## Overview
 
-Most encrypted messaging systems require you to **trust the platform**. SUMIT KEY adds an encryption layer _before_ any platform sees your content — every person gets their own cryptographic identity, every conversation gets its own channel key derived from both parties' identities.
+SUMIT KEY investigates whether mouse-movement and keystroke-timing characteristics can authenticate enrolled users while cryptographic keys are generated and managed separately.
 
-```
-Alice  (+44-7700-900001, WhatsApp)
-  ↓  UserIdentity → Channel → ch_alice.encrypt("Meet at noon")
-  ↓  opaque JSON envelope → {"magic":"SUMK","ct":"xK93Lp…"}
-WhatsApp  ← sees only ciphertext; cannot read, modify, or leak content
-  ↓
-Bob  (+44-7700-900002, WhatsApp)
-  ↓  UserIdentity → Channel → ch_bob.decrypt(envelope)
-  ↓
-"Meet at noon"
+Behavioural information is used only as authentication evidence. It is not used to generate, reproduce or replace the message-encryption key. This separation prevents normal behavioural variation from directly determining the cryptographic key.
+
+After Person A is authenticated, the application generates a fresh 32-byte Data Encryption Key (DEK) using the operating-system cryptographically secure pseudorandom number generator:
+
+```python
+os.urandom(32)
 ```
 
-**Properties:**
-- Alice's key is tied to **her** phone number + platform + device secret
-- The channel key is derived from **both** identities — only Alice and Bob can produce it
-- A WhatsApp channel key **cannot** be replayed on Telegram (platform label is in the KDF)
-- A server breach exposes only encrypted blobs; the keys never leave the devices
+The message is encrypted using AES-256-GCM. The DEK is then wrapped using a Key Encryption Key (KEK) associated with Person B. Person B must authenticate independently before the application unwraps the DEK and decrypts the message.
+
+```text
+Person A
+   ↓
+Fresh behavioural challenge
+   ↓
+Mouse and keystroke verification
+   ↓
+Single-use authentication token
+   ↓
+Fresh random message DEK
+   ↓
+AES-256-GCM encryption
+   ↓
+DEK wrapped using Person B's KEK
+   ↓
+Encrypted message package
+   ↓
+Independent Person B authentication
+   ↓
+DEK unwrap and one-time decryption
+```
+
+### Final Implementation
+
+The authoritative final implementation is:
+
+```text
+app.py — SUMIT KEY Fixed Core API, version 3.0.0
+```
+
+Older modules such as `api.py`, `main.py`, `capture.py`, `entropy_engine.py`, `key_generator.py` and parts of `sdk/` are retained as legacy or experimental components. They do not represent the corrected final dissertation workflow.
+
+---
+
+## Research Aim and Questions
+
+### Research Aim
+
+To design, implement and critically evaluate a two-user secure-messaging prototype in which mouse-movement and keystroke-timing characteristics authenticate users, ephemeral message-specific DEKs support AES-256-GCM encryption, and replay-resistant OTP and NFC mechanisms provide fallback authentication.
+
+### Research Questions
+
+| ID      | Research question                                                                                                    |
+| ------- | -------------------------------------------------------------------------------------------------------------------- |
+| **RQ1** | How effectively can mouse-movement and keystroke-timing features authenticate enrolled users?                        |
+| **RQ2** | How effectively can an ephemeral KEK/DEK architecture support secure Person A-to-Person B AES-256-GCM communication? |
+| **RQ3** | How effectively can challenges, authentication tokens and one-time message controls mitigate replay attacks?         |
+| **RQ4** | How effectively can OTP and NFC mechanisms provide fallback authentication when behavioural verification fails?      |
+
+### Research Objectives
+
+1. Capture mouse movement and timing-only keystroke information.
+2. Implement behavioural enrolment and authentication.
+3. Develop secure per-user KEK management.
+4. Generate an independent DEK for every message.
+5. Implement AES-256-GCM authenticated encryption.
+6. Support independent Person A and Person B authentication.
+7. Implement replay-resistant challenges, tokens and message controls.
+8. Implement OTP and NFC fallback authentication.
+9. Evaluate authentication accuracy and system performance.
+10. Critically assess security, accessibility and practical limitations.
 
 ---
 
 ## Key Concepts
 
-| Concept | Description |
-|---|---|
-| **Behavioural entropy** | Statistical features (mouse velocity, micro-tremor, keystroke dwell/flight time, per-key-pair bigrams) mixed into `os.urandom`. Additive — never a replacement for system randomness. |
-| **UserIdentity** | Cryptographic identity bound to `(user_id, platform, device_secret)`. The `device_secret` never leaves the device. Identities on the same `user_id` across different platforms produce distinct keys. |
-| **Channel** | A symmetric encryption context derived from `HKDF-SHA3-256(sorted(alice_pid, bob_pid) ‖ platform ‖ shared_secret)`. Both parties derive the same key independently — the key itself never traverses any network. |
-| **Shared secret** | A 256-bit random value exchanged once, out-of-band (e.g. QR code scan or in-person). The only value that must remain confidential between two parties. |
-| **Envelope** | A self-describing payload: `{"magic":"SUMK","v":1,"nonce":"…","ct":"…","fp":"…"}`. Transmittable over any channel as an opaque string. |
-| **Platform isolation** | The platform label (e.g. `"whatsapp"`) is a KDF input. A WhatsApp envelope cannot be decrypted on Telegram — different derived key, identical shared secret. |
-| **Ghost package** | Burn-after-read encrypted bundle. The decryption key is zeroized in memory after a single successful open. State machine: `ARMED → HOT → BURNED`. |
+| Concept                       | Description                                                                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Behavioural capture**       | Mouse coordinates, movement timestamps, keystroke dwell time and flight time collected for authentication analysis. |
+| **Behavioural template**      | A normalised feature vector produced during user enrolment.                                                         |
+| **Fresh capture**             | A new behavioural sample submitted in response to a short-lived authentication challenge.                           |
+| **Authentication challenge**  | A fresh nonce-based request that must be completed before its expiry time.                                          |
+| **Authentication token**      | A short-lived, purpose-bound and single-use token issued after successful authentication.                           |
+| **Stable user secret**        | A random secret generated during enrolment and protected using the server master key.                               |
+| **Key Encryption Key (KEK)**  | A user-specific 256-bit key derived from the stable secret using HKDF-SHA256.                                       |
+| **Data Encryption Key (DEK)** | A fresh random 256-bit key generated independently for each message.                                                |
+| **Authenticated encryption**  | AES-256-GCM encryption providing message confidentiality and integrity.                                             |
+| **DEK wrapping**              | Encryption of the message DEK using the intended recipient’s KEK.                                                   |
+| **Replay detection**          | Rejection of reused challenges, behavioural traces, authentication tokens and messages.                             |
+| **OTP fallback**              | Experimental email/phone OTP verification with expiry, resend and attempt controls.                                 |
+| **NFC fallback**              | Simulated HMAC challenge-response authentication that does not trust an NFC UID alone.                              |
 
 ---
 
-## Platform Security Model
+## Security Model
 
-<div align="center">
-  <img src="./docs/images/platform-security.svg" width="920" alt="SUMIT KEY Platform Security Model — Alice encrypts on device, platform sees only ciphertext, Bob decrypts on device">
-</div>
+SUMIT KEY is based on a trusted-server security model.
 
-<br/>
+The application server:
 
-| Threat | Without SUMIT KEY | With SUMIT KEY |
-|---|---|---|
-| Platform reads DMs | ✅ Full plaintext access | ❌ Sees `{"ct":"xK93Lp…"}` only |
-| Server breach | 💀 All content exposed | 🛡 Ciphertext only — no key stored |
-| MITM intercept | 💀 Plaintext visible | ❌ GCM auth tag rejects any tampering |
-| Quantum computer | ⚠️ RSA/ECDH broken | 🛡 ML-KEM-1024 (NIST FIPS 203) |
-| Cross-platform replay | — | ❌ Platform label in channel KDF |
-| Directional replay (Alice→Bob as Bob→Alice) | — | ❌ Sender/receiver context in GCM AAD |
+* stores encrypted stable user secrets in process memory;
+* performs behavioural verification;
+* derives user-specific KEKs;
+* generates message-specific DEKs;
+* encrypts and decrypts messages;
+* wraps and unwraps DEKs;
+* manages challenges and authentication tokens; and
+* enforces message expiry and one-time consumption.
+
+The server therefore belongs to the system trust boundary.
+
+| Security property             | Implementation                                                      |
+| ----------------------------- | ------------------------------------------------------------------- |
+| **Confidentiality**           | AES-256-GCM message encryption                                      |
+| **Integrity**                 | GCM authentication tag                                              |
+| **Recipient binding**         | Sender and recipient information included in authenticated metadata |
+| **Fresh key material**        | New 32-byte DEK generated for every message                         |
+| **Sender authentication**     | Fresh behavioural challenge before encryption                       |
+| **Recipient authentication**  | Separate behavioural challenge before decryption                    |
+| **Replay resistance**         | Single-use challenges, tokens, behavioural traces and messages      |
+| **Message expiry**            | Configurable encrypted-package lifetime                             |
+| **Fallback authentication**   | Experimental OTP and HMAC-based NFC challenge-response              |
+| **Administrative protection** | Optional admin API key for `/admin/state`                           |
+
+> [!WARNING]
+> SUMIT KEY should not be described as conventional end-to-end encryption because the trusted application server temporarily handles plaintext and cryptographic key material.
 
 ---
 
 ## Quick Start
 
-### Per-user identity (recommended)
-
-```python
-from sdk.identity import UserIdentity
-
-# Each person creates their identity on their platform
-alice = UserIdentity("+44-7700-900001", platform="whatsapp", display_name="Alice")
-bob   = UserIdentity("+44-7700-900002", platform="whatsapp", display_name="Bob")
-
-# One-time secret exchange — share this via QR code or in person
-# Never send it through the same platform as the messages
-secret = alice.new_shared_secret()
-
-# Each person independently derives the same channel key
-ch_alice = alice.channel_to(bob.public_id(),   shared_secret=secret)
-ch_bob   = bob.channel_to(alice.public_id(),   shared_secret=secret)
-
-# Encrypt → paste into WhatsApp → decrypt
-env = ch_alice.encrypt("Meet at noon — bring the documents.")
-msg = ch_bob.decrypt(env)   # → "Meet at noon — bring the documents."
-
-# Files work identically
-env_file = ch_alice.encrypt_file(open("report.pdf", "rb").read(), "report.pdf")
-doc      = ch_bob.decrypt_file(env_file)
-```
-
-The same pattern works for every supported platform — change `platform=` only:
-
-```python
-alice_tg = UserIdentity("@alice_tg",         platform="telegram")
-alice_gm = UserIdentity("alice@company.com", platform="gmail")
-alice_dr = UserIdentity("alice@company.com", platform="gdrive")
-alice_ig = UserIdentity("@alice.photo",      platform="instagram")
-alice_tw = UserIdentity("@alice_x",          platform="twitter")
-```
-
-### Lightweight SDK (no identity layer)
-
-```python
-from sdk import SumitKey
-
-sk  = SumitKey()
-key = sk.new_key()                                  # random or passphrase-derived
-env = sk.encrypt_text("hello", key, context="app")
-msg = sk.decrypt_text(env, key)                     # → "hello"
-```
-
-### Full stack
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-.git
 cd generating-random-number-and-key-with-the-mouse-and-keystroke-
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-python main.py                      # generate key from mouse + keyboard
-uvicorn api:app --port 8000         # full REST API (30+ endpoints)
-uvicorn sdk.server:app --port 8001  # lightweight SDK server (4 endpoints)
 ```
 
-### Browser — JavaScript SDK
-
-```javascript
-// sdk/sumitkey.js — zero dependencies, Web Crypto API only
-const key = await SumitKey.newKey();
-const env = await SumitKey.encryptText("hello", key);
-const msg = await SumitKey.decryptText(env, key);  // → "hello"
-```
-
-### Chrome Extension
-
-1. Open `chrome://extensions` → enable **Developer mode**
-2. **Load unpacked** → select `browser_extension/`
-3. Send tab → type a message → **Create Ghost Package**
-4. Share the JSON blob over any channel; share the ghost code over a **separate** channel
-5. Receiver: paste JSON + ghost code → move mouse → **Open Now** (burns the key after one read)
-
----
-
-## Architectural Foundation & Theoretical Depth
-
-### Layered System Design: Six-Tier Defense Architecture
-
-SUMIT KEY implements a **six-layer defense-in-depth architecture**, where each layer operates independently yet contributes to cumulative security assurance. Compromise of any single layer does not propagate to others — this principle is verified through the [CODE_CONNECTIONS_MAP.md](CODE_CONNECTIONS_MAP.md) (0 circular dependencies) and empirically validated across 346 passing tests.
-
-#### Layer 1: Entropy Source Isolation (Capture Layer)
-**Responsibility:** Raw signal acquisition from mouse and keyboard hardware  
-**Technology:** Pynput (LGPL-3.0) + optional evdev for Linux  
-**Security guarantee:** Sampling-level entropy ≥ 3.0 bits/byte; validated by NIST SP 800-22  
-**Threat model:** Hardware sensor compromise, OS-level mouse/keyboard hijacking  
-**Mitigation:** Multi-source pooling (mouse + keyboard), health checks reject weak biometric signals, OS randomness always mixed
-
-#### Layer 2: Feature Extraction & Statistical Normalization (Entropy Engine)
-**Responsibility:** Transform raw events (timestamps, coordinates, key codes) into dimensional features  
-**Technology:** NumPy-based statistical computation (Welford's algorithm for streaming variance, RMS for tremor detection)  
-**Security guarantee:** Deterministic feature extraction; identical inputs produce identical features  
-**Threat model:** Adversary observes feature vectors to infer underlying entropy; timing-based side channels  
-**Mitigation:** Features are intermediate; final key derived via HKDF (RFC 5869) with salt, preventing reverse engineering from features alone
-
-#### Layer 3: Entropy Pooling & Key Derivation (HKDF-SHA3-256)
-**Responsibility:** Combine multi-source entropy into a single high-entropy pool; apply RFC 5869 expansion  
-**Technology:** HKDF-Extract-and-Expand over SHA3-256, length-prefixed pooling to prevent boundary-collision attacks  
-**Security guarantee:** 256 bits of entropy per key; cryptanalytic strength verified against NIST SP 800-175B  
-**Threat model:** Nonce reuse, weak randomness, key derivation function breaks  
-**Mitigation:** Per-operation unique nonce (96-bit, `os.urandom`); HKDF salt distinct per operation context; post-quantum readiness via Argon2id stack
-
-#### Layer 4: Cryptographic Operations (Cipher Selection)
-**Responsibility:** Apply symmetric encryption appropriate to threat model and performance requirements  
-**Technology:** Four cryptographic stacks:
-- **Stack A:** AES-256-GCM (FIPS 197 + SP 800-38D) — classical 256-bit security
-- **Stack B:** ML-KEM-1024 (FIPS 203) + Argon2id (RFC 9106) + AES-256-GCM — post-quantum Level 5 (128-bit quantum-resistant security)
-- **Stack C:** ZKP + Shamir SSS + Vault — zero-knowledge proofs with information-theoretic secret sharing
-- **Stack D:** Rotating keys (0.3-second epochs) with identity binding — ephemeral session keys
-
-**Security guarantee:** GCM auth tag (128-bit) detects bit-level tampering; ciphertext expansion ≤ 32 bytes overhead  
-**Threat model:** Chosen-ciphertext attacks, cryptanalytic breakthroughs (pre-quantum or quantum), key leakage via timing  
-**Mitigation:** Authenticated encryption (GCM prevents forgery), multiple stacks (no single algorithm failure catastrophe), constant-time HMAC comparisons
-
-#### Layer 5: Identity Binding & Channel Derivation (Per-User Cryptographic Identities)
-**Responsibility:** Bind encryption contexts to specific (user_id, platform, device) tuples; derive platform-isolated channel keys  
-**Technology:** `UserIdentity` dataclass with sorted HKDF over `(alice_pid, bob_pid, platform, shared_secret)`  
-**Security guarantee:** Channel keys on WhatsApp ≠ channel keys on Telegram (platform label in KDF); key cannot be replayed across platforms  
-**Threat model:** Cross-platform replay attacks, impersonation, identity spoofing, confusion between two separate channels  
-**Mitigation:** Platform label included in key material (KDF input), sender/receiver roles distinguished in AAD, per-user key isolation verified in 28-test identity suite
-
-#### Layer 6: Transport & Protocol (API + Middleware Security)
-**Responsibility:** Enforce rate limits, validate request structure, detect anomalies before cryptographic operations  
-**Technology:** FastAPI middleware, per-IP rate limiting (10 req/min, 100 req/hour), security headers (HSTS, CSP, X-Frame-Options)  
-**Security guarantee:** DDoS mitigation (rate-limited), malformed requests rejected before deserialization  
-**Threat model:** Brute-force attacks, replay protocol violations, resource exhaustion, malformed JSON  
-**Mitigation:** IP-based rate limiting with 15-minute ban after 5 violations/min, Pydantic validation (type checking + bounds), ThreatLogger singleton for monotonic threat tracking
-
----
-
-### 3D Architectural Topology
-
-The system organizes into **three orthogonal dimensions**:
-
-```
-VERTICAL (Threat Model Layers)
-    ↑
-    │  Layer 6: API Protocol (FastAPI, rate limiting, security headers)
-    │  Layer 5: Identity Binding (UserIdentity, channel key derivation)
-    │  Layer 4: Cryptographic Operations (4 stacks × AES/KEM/ZKP/Rotating)
-    │  Layer 3: HKDF Pooling (Length-prefixed, entropy health checks)
-    │  Layer 2: Feature Extraction (Welford, RMS, bigram timing)
-    │  Layer 1: Entropy Sources (Mouse, keyboard, OS random)
-    │
-    └────────────────────────────────────────────────────────────
-
-HORIZONTAL (Module Segregation)
-    ┌─────────────┬──────────────┬──────────┬──────────┬──────┐
-    │  Capture    │  Engine      │  Pool    │  Crypt   │  API │
-    │  ─────      │  ─────       │  ────    │  ──────  │  ─── │
-    │  Mouse      │  Velocity    │  HKDF    │  AES     │ /key │
-    │  Keyboard   │  Tremor      │  SHA3    │  ML-KEM  │ /enc │
-    │  Evdev      │  Dwell       │  Salt    │  Shamir  │ /dec │
-    │             │  Flight      │  Expand  │  Rotate  │ /… │
-    └─────────────┴──────────────┴──────────┴──────────┴──────┘
-
-TEMPORAL (Lifecycle State Machine)
-    ┌────────┐
-    │ ARMED  │ ← identity created, ready for encryption
-    │        │
-    ├────────┤
-    │  HOT   │ ← encryption/decryption operations in progress
-    │        │
-    ├────────┤
-    │ BURNED │ ← ghost key used once; key zeroized in memory
-    │ SEALED │ ← biometric anomaly detected; channel locked
-    │ZEROIZED│ ← vault TTL expired; secret shared destroyed
-    └────────┘
-```
-
----
-
-### Complex Logical Flow: End-to-End Encryption Pipeline
-
-A single end-to-end message encryption encompasses **18 discrete operations** across all 6 layers:
-
-```
-MESSAGE ENCRYPTION WORKFLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-User calls:  ch_alice.encrypt("Meeting at noon — classified")
-              ↓
-[Layer 1] Capture behavioral entropy (optional reinforcement):
-  1. Request mouse events: `_capture_mouse_pynput()` → [x, y, t] tuples
-  2. Request keystroke events: `_capture_keystroke_pynput()` → dwell/flight times
-  3. Combine: `pool_entropy(mouse_bytes, keystroke_bytes)`
-              ↓
-[Layer 2] Extract statistical features (entropy_engine.py):
-  4. `extract_mouse_features()` → [velocity_px/s, tremor_rms, direction_angle]
-  5. `extract_keystroke_features()` → [mean_dwell_ms, σ_dwell, mean_flight_ms, σ_flight, bigram_timing_ms]
-  6. `health_check()` → verify ≥3.0 bits/byte (reject weak entropy)
-              ↓
-[Layer 3] Pool and derive key material (key_generator.py):
-  7. Hash pool: `pool_entropy()` → SHA3-256(len‖mouse‖len‖keys)
-  8. HKDF-Extract: `extract_entropy(pool, os.urandom(32), salt)`
-  9. HKDF-Expand: `derive_key(...)` with info=f"channel:{alice_pid}↔{bob_pid}"
-  10. Select cryptographic stack: (determined by caller or auto-select based on threat model)
-              ↓
-[Layer 4] Apply cryptographic cipher (crypto_tools.py):
-  11. For Stack A (AES-256-GCM):
-      a. Generate nonce: `os.urandom(12)` → 96 bits
-      b. Additional authenticated data (AAD): `b"{alice_pid}↔{bob_pid}|whatsapp"`
-      c. `AES_GCM_256.encrypt(plaintext, nonce, aad, key)` → ciphertext + auth_tag (128-bit)
-  12. For Stack B (ML-KEM hybrid):
-      a. `ML_KEM_1024.encapsulate()` → shared_secret + ciphertext (1568 bytes)
-      b. `Argon2id(shared_secret, salt=behaviour_entropy, t=1, m=64MB)`
-      c. `HKDF-SHA3-512(argon2id_output ‖ ml_kem_shared_secret)` → session_key
-      d. `AES_GCM_256.encrypt(plaintext, nonce, aad, session_key)`
-              ↓
-[Layer 5] Bind to identity context (identity.py):
-  13. Verify caller's `UserIdentity` state ∈ {ARMED, HOT}
-  14. Embed identity metadata:
-      - `sender_id`: SHA3-256(alice_pid ‖ device_secret)[:16]
-      - `recipient_id`: SHA3-256(bob_pid ‖ device_secret)[:16]
-      - `platform`: "whatsapp"
-      - `timestamp_ms`: monotonic count from system time + device_secret
-  15. Create self-describing envelope: `{"magic":"SUMK","v":1,"nonce":"…","ct":"…","fp":"…","metadata":{…}}`
-              ↓
-[Layer 6] Prepare for transport (api.py):
-  16. JSON serialize envelope → UTF-8 bytes
-  17. Apply rate limit check: `RateLimitMiddleware` → 10 req/min per IP
-  18. Return response: `{"envelope":"…","key_fingerprint":"…"}`
-
-Total latency: ~22 µs (p50) to ~36 µs (p99) including all 18 operations
-Key material zeroized after use (bytearray overwrite with zeros)
-```
-
----
-
-### Threat Model Integration: Seven Critical Threats + Mitigations
-
-All threats are documented with exact code locations in [THREAT_MODEL_PRODUCTION.md](THREAT_MODEL_PRODUCTION.md). This section provides a summary:
-
-| # | Threat | CVSS | Attack Vector | Mitigation | Code Location |
-|---|---|---|---|---|---|
-| **T1** | Nonce reuse (catastrophic AES-GCM break) | 9.8 | Attacker intercepts two ciphertexts encrypted with the same nonce under same key | Per-operation nonce: `os.urandom(12)` guaranteed unique across ≥ 2⁹⁶ operations | `crypto_tools.py:45-70` |
-| **T2** | Weak entropy source (biased keystream) | 8.6 | Biometric input is constant (e.g. user on external keyboard, no mouse movement) | Health check rejects entropy < 3.0 bits/byte; blocks key derivation; OS random always mixed | `entropy_engine.py:50-80` |
-| **T3** | Device capture / offline key compromise | 8.4 | Attacker steals device at time T; decrypts all historical messages | Double Ratchet forward secrecy: keys rotate every 10 messages (configurable); past keys independent | `sdk/double_ratchet.py:100-150` |
-| **T4** | Cross-platform replay (WhatsApp → Telegram) | 7.9 | Attacker copies ciphertext from WhatsApp channel to Telegram channel | Platform label included in channel key KDF input; identical envelope → different key per platform; GCM auth fails | `identity.py:120-160` |
-| **T5** | MITM interception + modification | 7.5 | Network attacker intercepts envelope, modifies ciphertext or metadata | GCM auth tag (128-bit) over plaintext + AAD; tag failure → `DecryptionError`; metadata bound in AAD via `sender_id\|recipient_id\|platform` | `crypto_tools.py:200-230` |
-| **T6** | Keystroke biometric anomaly (device hijacking) | 7.1 | Attacker gains device access; typing rhythm changes; legitimate channel proceeds undetected | Biometric Channel Seal: Welford's running statistics detect >3σ drift; channel auto-seals; threat callback invoked; future encrypt/decrypt blocked | `sdk/biometric_seal.py:180-250` |
-| **T7** | Cross-device key correlation (same user_id, different device) | 6.8 | Attacker observes keys from Alice's phone and Alice's laptop; infers user_id due to identical channel keys | Each device has unique `device_secret`; channel key depends on `SHA3-256(alice_pid ‖ bob_pid ‖ device_secret)` → different keys on different devices even for same user_id | `identity.py:60-90` |
-
----
-
-### Defense-in-Depth Architecture: Six Security Layers
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ LAYER 6: Protocol & Transport                                   │
-│  ├─ Rate limiting (10 req/min per IP)                          │
-│  ├─ Security headers (HSTS, CSP, X-Frame-Options)              │
-│  ├─ TLS (production) + secure redirect enforcement              │
-│  └─ Request validation (Pydantic BaseModel type checking)      │
-├─────────────────────────────────────────────────────────────────┤
-│ LAYER 5: Identity & Channel Binding                             │
-│  ├─ UserIdentity platform isolation                            │
-│  ├─ Sorted peer IDs in KDF (symmetry guarantee)                │
-│  ├─ Device secret per-device uniqueness                        │
-│  └─ Monotonic sequence counter + ±5-min timestamp AAD          │
-├─────────────────────────────────────────────────────────────────┤
-│ LAYER 4: Cryptographic Operations                               │
-│  ├─ 4 independent stacks (AES, ML-KEM, ZKP, Rotating)          │
-│  ├─ Per-operation 96-bit nonce (never reused)                  │
-│  ├─ 128-bit GCM auth tag (detects tampering)                   │
-│  └─ Constant-time HMAC.compare_digest() for sensitive checks   │
-├─────────────────────────────────────────────────────────────────┤
-│ LAYER 3: HKDF Pooling & Derivation                              │
-│  ├─ Length-prefixed pooling (prevents boundary collision)      │
-│  ├─ Salt & info parameters distinct per context                │
-│  ├─ HKDF-Extract (randomness neutrality) + Expand (safety)     │
-│  └─ 256-bit output ≥ 128-bit quantum-resistant security        │
-├─────────────────────────────────────────────────────────────────┤
-│ LAYER 2: Feature Extraction & Health Checks                     │
-│  ├─ Welford's algorithm (streaming variance, O(1) memory)      │
-│  ├─ Health check: rejects biased, constant, or run-length-weak │
-│  ├─ Blocks key derivation if entropy < 3.0 bits/byte           │
-│  └─ Deterministic transformation (side-channel resistant)      │
-├─────────────────────────────────────────────────────────────────┤
-│ LAYER 1: Entropy Source Isolation                               │
-│  ├─ Hardware sensor access (mouse + keyboard via pynput/evdev) │
-│  ├─ Multi-source pooling (no single source dependency)         │
-│  ├─ OS random (`os.urandom`) always mixed in                   │
-│  └─ Event capture with exception handling & debug logging      │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-
-
-## Installation & Integration
-
-> One server, any platform, any social media.  
-> SUMIT KEY runs as a lightweight local API — any phone, tablet, or desktop calls it over HTTP.
-
-### Universal Setup — 3 commands, any OS
+### 2. Create a Virtual Environment
 
 ```bash
-# 1. Clone
-git clone https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-.git
-cd generating-random-number-and-key-with-the-mouse-and-keystroke-
-
-# 2. Install (Python 3.11+)
-pip install cryptography fastapi uvicorn
-
-# 3. Start (accessible from any device on the same network)
-uvicorn sdk.server:app --host 0.0.0.0 --port 8001
+python -m venv .venv
 ```
 
-API is live at `http://localhost:8001/health`. Every platform below calls this server.
-
----
-
-### Platform Support Matrix
-
-| Platform | Integration method | Setup time |
-|---|---|---|
-| 🪟 Windows | Python SDK · REST API | ~2 min |
-| 🍎 macOS | Python SDK · REST API | ~2 min |
-| 🐧 Linux | Python SDK · REST API | ~2 min |
-| 🌐 Web browser (any OS) | Chrome Extension · JS SDK | ~1 min |
-| 📱 Android | REST API (OkHttp / Retrofit) | ~5 min |
-| 🍎 iOS | REST API (URLSession / Alamofire) | ~5 min |
-| 🐳 Docker | One-command container | ~3 min |
-
----
-
-### 🪟 Windows · 🍎 macOS · 🐧 Linux — Python SDK
+Activate the environment:
 
 ```bash
-pip install cryptography
+# Windows
+.venv\Scripts\activate
+
+# macOS/Linux
+source .venv/bin/activate
 ```
 
-```python
-from sdk.identity import UserIdentity
-
-# Replace with your real account IDs on the platform
-alice = UserIdentity("your_handle",    platform="whatsapp")   # or telegram / gmail / instagram / twitter
-bob   = UserIdentity("contact_handle", platform="whatsapp")
-
-# One-time: share this secret with your contact (QR code or in person — NOT through the app)
-secret = alice.new_shared_secret()
-
-# Both sides create their channel with the same secret
-ch_alice = alice.channel_to(bob.public_id(),   shared_secret=secret)
-ch_bob   = bob.channel_to(alice.public_id(),   shared_secret=secret)
-
-# Encrypt before sending
-encrypted = ch_alice.encrypt("Your private message here")
-# → paste this into WhatsApp / Telegram / Gmail / Instagram / Twitter
-
-# Decrypt after receiving
-plain = ch_bob.decrypt(encrypted)   # → "Your private message here"
-```
-
----
-
-### 🌐 Web Browser — Chrome · Edge · Brave (any OS)
-
-Works with **WhatsApp Web, Telegram Web, Instagram, Twitter/X, Gmail** — every platform with a web version.
-
-#### Option A — Chrome Extension *(easiest — no code required)*
-
-| Step | Action |
-|---|---|
-| 1 | Open `chrome://extensions` in your browser |
-| 2 | Toggle **Developer mode** on (top-right) |
-| 3 | Click **Load unpacked** → select the `browser_extension/` folder |
-| 4 | SUMIT KEY icon appears in your toolbar |
-| 5 | Open WhatsApp Web / Telegram Web / Instagram → click the icon → type message → **Create Ghost Package** |
-
-#### Option B — JavaScript SDK *(for web app developers)*
-
-```html
-<!-- No npm, no build step — drop this into any webpage -->
-<script src="sdk/sumitkey.js"></script>
-<script>
-  (async () => {
-    const key = await SumitKey.newKey();
-    const env = await SumitKey.encryptText("Your private message", key);
-    // paste `env` into WhatsApp Web / Telegram Web / Gmail
-
-    const plain = await SumitKey.decryptText(env, key);
-    console.log(plain);  // → "Your private message"
-  })();
-</script>
-```
-
----
-
-### 📱 Android
-
-No app to install on Android — call the SUMIT KEY REST API from any Android app using standard HTTP.
-
-**Prerequisites:** Start the server (on your laptop or any server):
-```bash
-uvicorn sdk.server:app --host 0.0.0.0 --port 8001
-```
-
-**Android — Kotlin (OkHttp)**
-
-```kotlin
-// In build.gradle:  implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-import okhttp3.*; import okhttp3.MediaType.Companion.toMediaType
-import org.json.JSONObject
-
-private val client = OkHttpClient()
-private val JSON   = "application/json".toMediaType()
-private val SERVER = "http://YOUR_SERVER_IP:8001"   // ← replace with your server IP
-
-fun generateKey(): String {
-    val req = Request.Builder().url("$SERVER/key/new")
-        .post(RequestBody.create(JSON, "{}")).build()
-    return JSONObject(client.newCall(req).execute().body!!.string()).getString("key")
-}
-
-fun encryptMsg(text: String, key: String): String {
-    val body = JSONObject().put("text", text).put("key", key).toString()
-    val req  = Request.Builder().url("$SERVER/encrypt")
-        .post(RequestBody.create(JSON, body)).build()
-    return JSONObject(client.newCall(req).execute().body!!.string()).getString("envelope")
-}
-
-fun decryptMsg(envelope: String, key: String): String {
-    val body = JSONObject().put("envelope", envelope).put("key", key).toString()
-    val req  = Request.Builder().url("$SERVER/decrypt")
-        .post(RequestBody.create(JSON, body)).build()
-    return JSONObject(client.newCall(req).execute().body!!.string()).getString("text")
-}
-```
-
-**Usage — wrap any social media message:**
-```kotlin
-// One-time key (store securely, share with contact out-of-band)
-val key = generateKey()
-
-val encrypted = encryptMsg("Meet at noon", key)
-// → paste `encrypted` into WhatsApp / Telegram / Instagram DM
-
-val plain = decryptMsg(encrypted, key)   // → "Meet at noon"
-```
-
----
-
-### 🍎 iOS — Swift (URLSession)
-
-```swift
-import Foundation
-
-let SERVER = "http://YOUR_SERVER_IP:8001"   // ← replace with your server IP
-
-func post(_ path: String, body: [String: String]) async throws -> [String: Any] {
-    var req = URLRequest(url: URL(string: SERVER + path)!)
-    req.httpMethod = "POST"
-    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    req.httpBody = try JSONSerialization.data(withJSONObject: body)
-    let (data, _) = try await URLSession.shared.data(for: req)
-    return try JSONSerialization.jsonObject(with: data) as! [String: Any]
-}
-
-func generateKey() async throws -> String {
-    return try await post("/key/new", body: [:])["key"] as! String
-}
-
-func encryptMsg(_ text: String, key: String) async throws -> String {
-    return try await post("/encrypt", body: ["text": text, "key": key])["envelope"] as! String
-}
-
-func decryptMsg(_ envelope: String, key: String) async throws -> String {
-    return try await post("/decrypt", body: ["envelope": envelope, "key": key])["text"] as! String
-}
-```
-
-**Usage:**
-```swift
-let key       = try await generateKey()
-let encrypted = try await encryptMsg("Meet at noon", key: key)
-// → paste into WhatsApp / iMessage / Telegram / Instagram DM
-
-let plain = try await decryptMsg(encrypted, key: key)   // → "Meet at noon"
-```
-
----
-
-### 🐳 Docker — deploy anywhere in one command
-
-```dockerfile
-# Dockerfile (already included in the repo)
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir cryptography fastapi uvicorn
-COPY sdk/ ./sdk/
-EXPOSE 8001
-CMD ["uvicorn", "sdk.server:app", "--host", "0.0.0.0", "--port", "8001"]
-```
+### 3. Install Dependencies
 
 ```bash
-# Build + run
-docker build -t sumitkey .
-docker run -p 8001:8001 sumitkey
-
-# Or pull and run (one line, no clone needed)
-docker run -p 8001:8001 sumitkey
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Accessible from any device at `http://HOST_IP:8001` — phone, tablet, laptop, or CI pipeline.
-
----
-
-### Social Media — Step-by-Step Guide
-
-> These steps are identical on iOS, Android, Windows, and macOS.
-
-<details>
-<summary><b>💬 WhatsApp</b></summary>
-
-| Step | What to do |
-|---|---|
-| 1 | Both people start the SUMIT KEY server (or use the same shared server) |
-| 2 | Alice: `alice = UserIdentity("+44-7700-900001", platform="whatsapp")` |
-| 3 | Bob: `bob = UserIdentity("+44-7700-900002", platform="whatsapp")` |
-| 4 | Alice generates a secret: `s = alice.new_shared_secret()` |
-| 5 | Alice shares `s` with Bob via QR code or in person — **not through WhatsApp** |
-| 6 | Both create their channel: `ch = identity.channel_to(other.public_id(), shared_secret=s)` |
-| 7 | Alice: `enc = ch_alice.encrypt("message")` → pastes into WhatsApp |
-| 8 | Bob receives `enc` → `ch_bob.decrypt(enc)` → reads the plaintext |
-
-WhatsApp sees only: `{"magic":"SUMK","nonce":"aB3kX9…","ct":"xK93Lp…"}` — unreadable.
-
-</details>
-
-<details>
-<summary><b>✈️ Telegram</b></summary>
-
-```python
-alice = UserIdentity("@alice_tg", platform="telegram")
-bob   = UserIdentity("@bob_tg",   platform="telegram")
-s     = alice.new_shared_secret()   # share via Telegram's "Share Contact" QR or in person
-
-ch_alice = alice.channel_to(bob.public_id(), shared_secret=s)
-ch_bob   = bob.channel_to(alice.public_id(), shared_secret=s)
-
-env = ch_alice.encrypt("Project deadline Friday")
-# → paste into Telegram message
-plain = ch_bob.decrypt(env)   # → "Project deadline Friday"
-```
-
-Also supports **group channels** — each pair of participants gets their own channel key.
-
-</details>
-
-<details>
-<summary><b>📧 Gmail</b></summary>
-
-```python
-alice = UserIdentity("alice@company.com", platform="gmail")
-bob   = UserIdentity("bob@company.com",   platform="gmail")
-s     = alice.new_shared_secret()
-
-ch_alice = alice.channel_to(bob.public_id(), shared_secret=s)
-ch_bob   = bob.channel_to(alice.public_id(), shared_secret=s)
-
-# Encrypt the email body
-body = "Hi Bob, merger terms: 12% equity, £240k seed, 18-month cliff."
-env  = ch_alice.encrypt(body)
-
-# Send the envelope as the email body — Google never reads it
-# Subject line: "[SUMIT KEY ENCRYPTED]"
-plain = ch_bob.decrypt(env)   # → original body
-```
-
-</details>
-
-<details>
-<summary><b>🗂 Google Drive</b></summary>
-
-```python
-# Personal document — only Alice can open it
-alice_dr    = UserIdentity("alice@company.com", platform="gdrive")
-personal_sk = SumitKey()
-enc_file    = personal_sk.encrypt_file(
-    open("report.pdf","rb").read(), "report.pdf",
-    alice_dr.personal_key()
-)
-# Upload enc_file to Drive — Google stores only ciphertext
-
-# Shared document — Alice + Bob both open it
-bob_dr = UserIdentity("bob@company.com", platform="gdrive")
-s      = alice_dr.new_shared_secret()
-ch_a   = alice_dr.channel_to(bob_dr.public_id(), shared_secret=s)
-ch_b   = bob_dr.channel_to(alice_dr.public_id(), shared_secret=s)
-
-enc_shared = ch_a.encrypt_file(open("minutes.pdf","rb").read(), "minutes.pdf")
-# Upload to Drive; Bob decrypts: ch_b.decrypt_file(enc_shared)
-```
-
-</details>
-
-<details>
-<summary><b>📸 Instagram · 🐦 Twitter/X</b></summary>
-
-```python
-# Instagram
-alice_ig = UserIdentity("@alice.photo", platform="instagram")
-bob_ig   = UserIdentity("@bob.photo",   platform="instagram")
-s        = alice_ig.new_shared_secret()
-
-ch_ig_a  = alice_ig.channel_to(bob_ig.public_id(), shared_secret=s)
-ch_ig_b  = bob_ig.channel_to(alice_ig.public_id(), shared_secret=s)
-
-env = ch_ig_a.encrypt("DM: off-the-record offer — $4.2M")
-# paste into Instagram DM prefixed with 🔒
-plain = ch_ig_b.decrypt(env)
-
-# Twitter/X — same pattern, change platform
-alice_tw = UserIdentity("@alice_x", platform="twitter")
-```
-
-</details>
-
----
-
-### Quick Test — Verify the install works
+### 4. Start the Final Application
 
 ```bash
-# 1. Health check
-curl http://localhost:8001/health
-# → {"status":"ok","version":"1.0"}
+python app.py
+```
 
-# 2. Generate a key
-KEY=$(curl -s -X POST http://localhost:8001/key/new \
-  -H "Content-Type: application/json" -d '{}' | python3 -c "import sys,json; print(json.load(sys.stdin)['key'])")
+Alternatively:
 
-# 3. Encrypt
-ENV=$(curl -s -X POST http://localhost:8001/encrypt \
-  -H "Content-Type: application/json" \
-  -d "{\"text\":\"hello from any platform\",\"key\":\"$KEY\"}" | \
-  python3 -c "import sys,json; print(json.load(sys.stdin)['envelope'])")
+```bash
+uvicorn app:app --host 127.0.0.1 --port 8000
+```
 
-# 4. Decrypt
-curl -s -X POST http://localhost:8001/decrypt \
-  -H "Content-Type: application/json" \
-  -d "{\"envelope\":\"$ENV\",\"key\":\"$KEY\"}"
-# → {"text":"hello from any platform"}
+### 5. Open the API Documentation
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### 6. Verify the Application
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Expected development response:
+
+```json
+{
+  "status": "ok",
+  "version": "3.0.0",
+  "users": 0,
+  "pending_messages": 0
+}
 ```
 
 ---
 
-## Architecture
+## Architectural Foundation
 
-```mermaid
-flowchart TB
-    subgraph CAP["📡 Capture Layer"]
-        M["🖱 Mouse\nvelocity · tremor · direction"]
-        K["⌨ Keystroke\ndwell · flight · bigram"]
-        R["🎲 OS Random\nalways mixed in"]
-    end
+SUMIT KEY uses a six-layer architecture in which behavioural authentication is separated from cryptographic key generation.
 
-    POOL["🧬 pool_entropy()\nSHA3-256(len‖mouse ‖ len‖keys) → 32 bytes"]
+### Layer 1: Behavioural Capture
 
-    subgraph ID["👤 Per-User Identity  (sdk/identity.py)"]
-        UID["UserIdentity\nuser_id · platform · device_secret · behaviour"]
-        CH["Channel A ↔ B\nHKDF-SHA3-256(sorted_ids + shared_secret + platform)"]
-    end
+**Responsibility:** Collect mouse and keyboard-timing information.
 
-    subgraph STACKS["🔐 Crypto Stacks"]
-        direction LR
-        SA["Stack A\nAES-256-GCM"]
-        SB["Stack B\nML-KEM-1024"]
-        SC["Stack C\nZKP + Vault"]
-        SD["Stack D\nRotating Keys"]
-    end
+**Mouse data:**
 
-    subgraph PLAT["🌐 Platform Integrations"]
-        direction LR
-        P1["💬 WhatsApp"]
-        P2["✈️ Telegram"]
-        P3["📧 Gmail"]
-        P4["🗂 Drive"]
-        P5["📸 Instagram"]
-        P6["🐦 Twitter/X"]
-    end
+* x/y coordinates;
+* high-resolution timestamps;
+* movement distance;
+* movement duration;
+* velocity;
+* acceleration;
+* direction changes; and
+* small movement characteristics.
 
-    M --> POOL
-    K --> POOL
-    R --> POOL
-    POOL --> UID
-    UID --> CH
-    CH --> SA & SB & SC & SD
-    SA --> P1 & P2 & P3 & P4 & P5 & P6
+**Keyboard data:**
+
+* key dwell time;
+* inter-key flight time; and
+* event timestamp.
+
+The actual characters typed are not included in the behavioural capture sent to the API.
+
+### Layer 2: Feature Extraction
+
+**Responsibility:** Convert raw capture events into a normalised behavioural feature vector.
+
+The final API extracts:
+
+* total mouse distance;
+* mouse-capture duration;
+* mean and standard deviation of speed;
+* mean and standard deviation of acceleration;
+* mean direction change;
+* proportion of small movement steps;
+* mean and standard deviation of dwell time;
+* mean and standard deviation of flight time;
+* number of key events; and
+* keyboard-capture duration.
+
+Mouse movement is adjusted using the supplied device DPI:
+
+```text
+millimetres per pixel = 25.4 ÷ DPI
 ```
+
+Capture-quality checks reject samples with insufficient movement, duration, event quantity or unique positions.
+
+### Layer 3: Authentication and Replay Control
+
+**Responsibility:** Authenticate users without directly deriving encryption keys from their behaviour.
+
+Each authentication attempt requires:
+
+1. a known enrolled user;
+2. a fresh challenge;
+3. a challenge matching the intended user and purpose;
+4. an unexpired challenge;
+5. a fresh behavioural trace;
+6. a feature distance within the enrolled threshold; and
+7. successful consumption of the challenge.
+
+A successful verification returns a short-lived authentication token.
+
+Challenges, authentication tokens and behavioural traces are checked for reuse.
+
+### Layer 4: KEK and DEK Management
+
+**Responsibility:** Generate, protect and control cryptographic keys separately from behavioural information.
+
+During enrolment:
+
+```text
+Random stable user secret
+        ↓
+Protected with server master key
+        ↓
+HKDF-SHA256
+        ↓
+User-specific 256-bit KEK
+```
+
+During message encryption:
+
+```text
+os.urandom(32)
+        ↓
+Fresh 256-bit DEK
+        ↓
+AES-256-GCM message encryption
+        ↓
+DEK wrapped using recipient KEK
+```
+
+The DEK is independent of the user’s mouse or keyboard behaviour.
+
+### Layer 5: Message Encryption
+
+**Responsibility:** Protect message confidentiality and integrity.
+
+AES-256-GCM uses:
+
+* a 256-bit DEK;
+* a fresh 96-bit nonce;
+* authenticated sender metadata;
+* authenticated recipient metadata;
+* creation time;
+* expiry time; and
+* a GCM authentication tag.
+
+The DEK is wrapped separately using the recipient-specific KEK.
+
+The raw DEK is not returned by the API.
+
+### Layer 6: API and Fallback Authentication
+
+**Responsibility:** Expose the final workflow through validated API endpoints.
+
+The FastAPI layer provides:
+
+* Pydantic request validation;
+* configurable CORS origins;
+* security response headers;
+* enrolment and verification endpoints;
+* encryption and decryption endpoints;
+* OTP fallback;
+* simulated NFC challenge-response;
+* research endpoints;
+* authentication metrics; and
+* protected administrative state inspection.
 
 ---
 
-## Per-User Identity & Channels
-
-Every `UserIdentity` is built from four components:
-
-| Component | Role | Public? |
-|---|---|---|
-| `user_id` | Phone number, username, or email on the platform | Yes — exchanged openly |
-| `platform` | `"whatsapp"` · `"telegram"` · `"gmail"` · `"gdrive"` · `"instagram"` · `"twitter"` | Yes |
-| `device_secret` | 32-byte secret unique to this device; never leaves the device | **No** |
-| `behaviour` | Mouse + keystroke entropy bytes (optional reinforcement) | **No** |
-
-The channel key is derived as:
-
-```
-channel_key = HKDF-SHA3-256(
-    SHA3-256(
-        b"SUMITKEY_CHANNEL_V1"
-        + platform                                  ← platform-bound
-        + sorted(alice.public_id(), bob.public_id())  ← symmetric
-        + shared_secret                             ← exchanged once, out-of-band
-    ),
-    salt = b"SUMITKEY_CHANNEL_V1",
-    info = f"channel:{alice_pid}↔{bob_pid}".encode()  ← directional AAD
-)
-```
-
-**Security properties (verified by the 28-test identity suite):**
-
-| Attack | Blocked by |
-|---|---|
-| Charlie intercepts Alice→Bob | Different shared secret → different key; GCM auth fails |
-| Replay WhatsApp message on Telegram | Platform label in KDF → different key; GCM auth fails |
-| Wrong shared secret | Wrong IKM → wrong key; GCM auth fails |
-| Same `user_id`, different platform | Different `identity_hash()`; different key |
-| Rename encrypted file | `expected_name=` check with `hmac.compare_digest`; raises `ValueError` |
-| MITMShield replay | Monotonic sequence counter + ±5-min timestamp window; rejected |
-
-### How two parties bootstrap a channel
+## End-to-End Workflow
 
 ```mermaid
 sequenceDiagram
-    participant A as 📱 Alice
-    participant B as 📱 Bob
-    participant P as ☁️ Platform
+    participant A as Person A
+    participant API as SUMIT KEY API
+    participant B as Person B
 
-    Note over A,B: One-time out-of-band setup (QR code / in person)
-    A->>B: s = alice.new_shared_secret()
-
-    Note over A: ch_alice = alice.channel_to(bob_pid, shared_secret=s)
-    Note over B: ch_bob   = bob.channel_to(alice_pid, shared_secret=s)
-    Note over A,B: Both derive the identical channel key independently — key never travels over any network
-
-    A->>A: env = ch_alice.encrypt("hello")
-    A->>P: {"magic":"SUMK","ct":"xK93Lp…"}
-    Note over P: 👁 Platform sees ciphertext only
-    P->>B: {"magic":"SUMK","ct":"xK93Lp…"}
-    B->>B: msg = ch_bob.decrypt(env) → "hello"
+    A->>API: Enrol behavioural template
+    B->>API: Enrol behavioural template
+    A->>API: Request encrypt challenge
+    API-->>A: Fresh challenge
+    A->>API: Submit fresh behavioural capture
+    API-->>A: Single-use encrypt token
+    A->>API: Encrypt message for Person B
+    API->>API: Generate fresh DEK
+    API->>API: AES-256-GCM encrypt
+    API->>API: Wrap DEK using Person B's KEK
+    API-->>A: Return message ID
+    B->>API: Request decrypt challenge
+    API-->>B: Fresh challenge
+    B->>API: Submit fresh behavioural capture
+    API-->>B: Single-use decrypt token
+    B->>API: Submit message ID and token
+    API->>API: Unwrap DEK and decrypt once
+    API-->>B: Return plaintext
 ```
 
----
+### Corrected Message Lifecycle
 
-## Cryptographic Stacks
-
-<div align="center">
-  <img src="./docs/images/crypto-stacks.svg" width="920" alt="SUMIT KEY — Four Cryptographic Stacks">
-</div>
-
-<br/>
-
-<details>
-<summary><b>Stack A — Classical AES-256-GCM</b> (click to expand)</summary>
-
-| Property | Value |
-|---|---|
-| Symmetric cipher | AES-256-GCM |
-| Key derivation | HKDF-SHA3-256 (RFC 5869) from pooled entropy + `os.urandom` |
-| Nonce | 96-bit, `os.urandom` per operation — never reused |
-| Auth tag | 128-bit GCM — detects any bit-level tampering |
-| AAD | Filename bound into GCM tag — rename detected via `hmac.compare_digest` |
-| Classical security | 256-bit |
-| Post-quantum security | 128-bit (Grover halving) |
-
-</details>
-
-<details>
-<summary><b>Stack B — Quantum-safe Hybrid (ML-KEM-1024 + Argon2id + AES-256-GCM)</b></summary>
-
-| Property | Value |
-|---|---|
-| KEM | ML-KEM-1024, NIST FIPS 203 (2024), NIST Level 5 |
-| KEM ciphertext | 1568 bytes |
-| Key hardening | Argon2id (RFC 9106), 64 MB, t=1, behaviour entropy as salt |
-| Session key | HKDF-SHA3-512(KEM_shared ‖ Argon2id_output) → 32 bytes |
-| Cipher | AES-256-GCM |
-| Defense in depth | Breaking KEM alone is insufficient; Argon2id behaviour blob also required |
-| Post-quantum security | 128-bit (NIST Level 5) |
-
-</details>
-
-<details>
-<summary><b>Stack C — Zero-Knowledge Proofs + Vault + MITM Shield</b></summary>
-
-| Layer | Algorithm | Property |
-|---|---|---|
-| ZKP | Schnorr / Fiat-Shamir over RFC 3526 Group 14 (2048-bit MODP) | Proves knowledge without revealing secret |
-| Secret sharing | Shamir SSS over GF(2⁸) | N-of-M threshold; information-theoretic security |
-| Vault lifecycle | `ARMED → HOT → BURNED` | Burn-after-read; TTL dead-man switch |
-| Wire protocol | MITMShield — ML-KEM session + AES-GCM + HMAC-SHA3-512 | ±5-min timestamp + monotonic sequence counter |
-
-</details>
-
-<details>
-<summary><b>Stack D — Rotating Keys</b></summary>
-
-| Property | Value |
-|---|---|
-| Rotation epoch | 0.3 seconds (derived from system time + identity) |
-| Identity binding | `user_id + session_id + device_secret + context` |
-| Threat blocking | Suspicious sessions rejected _before_ key derivation begins |
-| Recovery | Self-healing retry with backup identity failover |
-| Envelope | Includes expiry — serverless cold-start safe |
-
-</details>
+| Stage | Operation                   | Security control                            |
+| ----- | --------------------------- | ------------------------------------------- |
+| 1     | Person A enrols             | Validated behavioural template              |
+| 2     | Person B enrols             | Separate user secret and KEK                |
+| 3     | Person A requests challenge | Fresh, short-lived nonce                    |
+| 4     | Person A authenticates      | Threshold comparison and trace-replay check |
+| 5     | Message is encrypted        | Fresh DEK and AES-256-GCM                   |
+| 6     | DEK is wrapped              | Recipient-specific KEK                      |
+| 7     | Person B requests challenge | Independent recipient authentication        |
+| 8     | Person B authenticates      | Fresh capture and single-use token          |
+| 9     | Message is decrypted        | Recipient binding and GCM verification      |
+| 10    | Message is consumed         | Repeated decryption rejected                |
 
 ---
 
-## Entropy Pipeline
+## Installation
 
-```mermaid
-flowchart LR
-    M["🖱 Mouse Events\nN movements captured"]
-    K["⌨ Keystroke Events\nN presses captured"]
-    OS["🎲 os.urandom(32)\nalways mixed in"]
+### Windows
 
-    ME["extract_mouse()\nmean velocity · σ (jitter)\ntremor RMS &lt;3px\n→ 64 bytes"]
-    KE["extract_keystroke()\nmean dwell + σ\nmean flight + σ\nbigram timings\n→ variable bytes"]
+```powershell
+git clone https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-.git
+cd generating-random-number-and-key-with-the-mouse-and-keystroke-
 
-    HC["health_check()\n✗ all bytes identical\n✗ one byte &gt;85% dominant\n✗ run length &gt;32\n✓ diverse 32+ bytes"]
+python -m venv .venv
+.venv\Scripts\activate
 
-    POOL["pool_entropy()\nSHA3-256(\n  len‖mouse ‖ len‖keys\n) → 32 bytes"]
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 
-    KD["HKDF-Extract\n+HKDF-Expand\n(RFC 5869)"]
-    KEY["32-byte key\n256-bit security"]
-
-    M --> ME
-    K --> KE
-    ME --> POOL
-    KE --> POOL
-    POOL --> HC
-    HC --> KD
-    OS --> KD
-    KD --> KEY
+python app.py
 ```
 
-**Why length-prefixed pooling?** `SHA3-256(len(mouse)‖mouse‖len(keys)‖keys)` prevents boundary-collision attacks where swapping bytes between sources produces the same hash — a technique from TLS 1.3 transcript hashing.
-
-**Why `os.urandom` is always mixed in:** Behavioural entropy is _additive_. Even if a capture is trivially weak, the OS random component guarantees a cryptographically secure key.
-
----
-
-## Platform Integrations
-
-Each platform has its own individual `UserIdentity` — platform label is included in the channel key derivation, so keys are **mathematically isolated** across platforms.
-
-| Platform | Identity format | What is encrypted | Demo |
-|---|---|---|---|
-| 💬 WhatsApp | Phone number `+44-7700-900001` | Message body | `python -m sdk.integrations.whatsapp` |
-| ✈️ Telegram | Username `@alice_tg` | Message body, group channels | `python -m sdk.integrations.telegram` |
-| 📧 Gmail | Email `alice@company.com` | Email body | `python -m sdk.integrations.gmail_drive` |
-| 🗂 Google Drive | Email `alice@company.com` | File bytes before upload; personal key for private docs | `python -m sdk.integrations.gmail_drive` |
-| 📸 Instagram | Handle `@alice.photo` | DM body | `python -m sdk.integrations.instagram_twitter` |
-| 🐦 Twitter/X | Handle `@alice_x` | DM body | `python -m sdk.integrations.instagram_twitter` |
-
-Each demo prints third-party isolation, cross-platform isolation, and per-user key-uniqueness checks to stdout.
-
-> **Platform isolation proof:** `ch_whatsapp.channel_to(bob)` and `ch_telegram.channel_to(bob)` produce different keys for the same two people and the same shared secret. A WhatsApp envelope cannot be replayed on Telegram — the GCM auth tag will fail.
-
----
-
-## NIST SP 800-22 Validation
-
-Three experiments validate that the entropy pipeline produces statistically uniform output:
-
-| Experiment | Entropy source | Purpose |
-|---|---|---|
-| A | Mouse only | Is mouse movement alone statistically random? |
-| B | Keystroke only | Is typing rhythm alone statistically random? |
-| C | Mouse + Keystroke | Does combining sources outperform either alone? |
+### macOS and Linux
 
 ```bash
-python main.py --mode experiments --num-keys 4000
-# Runs all NIST SP 800-22 frequency, block-frequency, runs, and serial tests
-# Results saved to results/ (key material stripped — fingerprints only)
+git clone https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-.git
+cd generating-random-number-and-key-with-the-mouse-and-keystroke-
+
+python -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+python app.py
 ```
 
-> These are engineering-validation tests, not a FIPS certification claim. See [Security Limitations](#security-limitations).
+> [!NOTE]
+> The application binds to `127.0.0.1:8000` by default. This local-only default is safer for controlled development and evaluation.
 
 ---
 
-## Tier 1 Advanced Security Features
+## Configuration
 
-Three genuinely novel, no-existing-equivalent security features providing defense-in-depth across continuous authentication, forward secrecy, and covert messaging:
+| Environment variable                       |              Default | Purpose                                                     |
+| ------------------------------------------ | -------------------: | ----------------------------------------------------------- |
+| `SUMIT_MASTER_KEY_HEX`                     | Temporary random key | 64-character hexadecimal master key protecting user secrets |
+| `SUMIT_HOST`                               |          `127.0.0.1` | API listening address                                       |
+| `SUMIT_PORT`                               |               `8000` | API listening port                                          |
+| `SUMIT_CORS_ORIGINS`                       |    Localhost origins | Permitted browser origins                                   |
+| `SUMIT_ADMIN_API_KEY`                      |       Not configured | Protects `/admin/state`                                     |
+| `SUMIT_CHALLENGE_TTL_SECONDS`              |                 `30` | Authentication-challenge lifetime                           |
+| `SUMIT_AUTH_TOKEN_TTL_SECONDS`             |                 `30` | Authentication-token lifetime                               |
+| `SUMIT_PACKAGE_TTL_SECONDS`                |                `120` | Encrypted-message lifetime                                  |
+| `SUMIT_OTP_TTL_SECONDS`                    |                `300` | OTP lifetime                                                |
+| `SUMIT_OTP_RESEND_SECONDS`                 |                 `30` | Minimum OTP resend interval                                 |
+| `SUMIT_MAX_OTP_ATTEMPTS`                   |                  `5` | Maximum OTP attempts                                        |
+| `SUMIT_TRACE_REPLAY_TTL_SECONDS`           |                `600` | Behavioural-trace replay window                             |
+| `SUMIT_MATCH_THRESHOLD`                    |               `0.85` | Default behavioural-distance threshold                      |
+| `SUMIT_LOCAL_EPHEMERAL_KEY_TARGET_SECONDS` |               `0.03` | Experimental raw-DEK lifetime target                        |
+| `SUMIT_DEV_SHOW_OTP`                       |                  `0` | Expose OTP only during local development                    |
 
-### Feature 1: Biometric Channel Seal — Continuous Keystroke-Rhythm Authentication
-
-**What it does:**  
-Continuously monitors typing rhythm within an encrypted channel. If keystroke timing drifts abnormally (>3σ Z-score), the channel auto-seals and raises a threat event — detecting device compromise, hijacking, or account takeover in real time.
-
-**How it works:**
-- **Enrollment phase**: Collects ≥100 keystrokes to establish baseline (flight time, dwell time, bigram timings)
-- **Online phase**: Uses Welford's algorithm (O(1) memory) to compute running statistics
-- **Anomaly detection**: Z-score threshold at 3σ (99.7% confidence) = 0.27% false positive rate
-- **No PII stored**: Only timing deltas; keystroke contents never captured
-
-**Security properties:**
-- Normal typing: Z-score = 0.52, confidence = 100% (not anomalous)
-- Anomalous typing (deliberate drift): Z-score = 11.59 (>3σ, flagged as threat)
-- Flight time baseline: 74.05 ms ± 0.10 ms (tight variance under normal conditions)
-
-**Usage:**
-
-```python
-from sdk.biometric_seal import BiometricSealedChannel, KeystrokeEvent
-from sdk.identity import UserIdentity
-import time
-
-alice = UserIdentity("+44-7700-900001", platform="whatsapp")
-bob   = UserIdentity("+44-7700-900002", platform="whatsapp")
-
-# Create biometric-sealed channel
-sealed_ch = BiometricSealedChannel(ch_alice)
-
-# Enroll keystroke profile (100+ keystrokes)
-keystroke_events = [
-    KeystrokeEvent(timestamp_ms=t, key_code=ord('a'), dwell_time_ms=120)
-    for t in range(100)
-]
-sealed_ch.enroll_keystroke_profile(keystroke_events)
-
-# During messaging, pass keystroke events
-try:
-    env = sealed_ch.encrypt_with_keystroke_events(
-        "Budget approved for Q4", 
-        keystroke_events=live_events
-    )
-except ThreatEvent as threat:
-    # Auto-seal triggered; log threat, disable channel, alert user
-    print(f"⚠️ Threat detected: {threat.threat_type}, Z-score: {threat.z_score}")
-    # Channel is now SEALED; future encrypt/decrypt operations blocked
-```
-
-**Reference:** [sdk/biometric_seal.py](sdk/biometric_seal.py) (380 LOC)
-
----
-
-### Feature 2: Double Ratchet / Forward Secrecy — Signal-Level Ephemeral Key Agreement
-
-**What it does:**  
-Implements Signal protocol's double ratchet using X25519 ECDH. After every N messages (configurable, default 10), the channel automatically performs an ephemeral key exchange to derive a new session key — guaranteeing that a device compromise at time T cannot decrypt messages sent *before* T.
-
-**How it works:**
-- **DH ratchet**: Each epoch uses X25519 ephemeral keypairs; new shared secret via HKDF-SHA256
-- **Message counter**: Resets per epoch; prevents monotonic attack
-- **Epoch tracking**: Incremented after N messages; stored with message metadata
-- **Recovery**: Break-in at time T: next DH ratchet (at message N+1) re-establishes secrecy for all *future* messages
-
-**Security properties:**
-- **Perfect forward secrecy**: Compromise at T doesn't decrypt past messages (before last ratchet)
-- **Break-in recovery**: At next ratchet, session key is re-derived from new ephemeral DH
-- **Key independence**: Each epoch derives independent keys; verified across 3+ epochs
-- **Entropy distribution**: 16/16 unique hex digits per epoch (perfect distribution)
-
-**Usage:**
-
-```python
-from sdk.double_ratchet import ForwardSecrecyChannel
-from sdk.identity import UserIdentity
-
-alice = UserIdentity("+44-7700-900001", platform="whatsapp")
-bob   = UserIdentity("+44-7700-900002", platform="whatsapp")
-
-# Wrap channel with forward secrecy (ratchet every 10 messages)
-fs_channel = ForwardSecrecyChannel(ch_alice, ratchet_frequency=10)
-
-# Send messages — ratchet happens automatically every 10 messages
-for i in range(25):
-    env = fs_channel.encrypt(f"Message {i}: classified data")
-    # Message 0-9: epoch 0
-    # Message 10-19: epoch 1 (DH ratchet at message 10)
-    # Message 20-24: epoch 2 (DH ratchet at message 20)
-
-# Hypothetical breach: attacker steals device_secret at message 15
-# Old messages (0-9) remain encrypted under epoch 0 session key (not stolen)
-# New messages (25+) encrypted under fresh epoch 2 session key (derived after breach)
-# Only messages 10-14 are compromised
-
-# Manual ratchet (force new epoch)
-fs_channel.force_ratchet(direction='send', peer_public_key=bob_dh_public)
-```
-
-**Reference:** [sdk/double_ratchet.py](sdk/double_ratchet.py) (340 LOC)
-
----
-
-### Feature 3: Steganographic Envelope Mode — Invisible Ciphertext Embedding
-
-**What it does:**  
-Hides encrypted data in three orthogonal mediums invisible to human inspection — emoji variation selectors, zero-width Unicode characters, and image LSB/EXIF — so encrypted messages appear as innocent emojis, normal text, or photo metadata.
-
-**How it works:**
-
-**Mode 1: Emoji Variation Selectors (U+FE00–FE0F)**
-- Encodes 4 bits per variant selector (16 variants per base emoji)
-- Appears as normal emoji string (🔒🔒🔒) on social media
-- 4x expansion (256 bytes → 1,024 emoji characters)
-- All 16 variants used (perfect distribution)
-
-**Mode 2: Zero-Width Characters**
-- Encodes 2 bits per invisible character (ZWJ, ZWNJ, WJ, ZWS)
-- Hides in "gaps" between normal text: "Hello [invisible]world"
-- 65.8% of characters invisible to human eye
-- Cover text parameter for plausible deniability
-
-**Mode 3: Image Steganography**
-- **LSB mode**: 3 bits per pixel RGB channel → 37.5 KB capacity per 100×100 image
-- **EXIF mode**: Metadata embedding for email-based covert channels
-- <1% visual degradation (imperceptible)
-
-**Security properties:**
-- **Invisibility**: Emoji appears normal; zero-width characters undetectable; image <1% visual change
-- **Capacity**: Emoji 4x expansion, zero-width 65.8% overhead, image 37.5 KB per small photo
-- **Statistical indistinguishability**: Character distribution matches natural language
-
-**Usage:**
-
-```python
-from sdk.steganography import (
-    EmojiSteganography, 
-    ZeroWidthSteganography, 
-    ImageSteganography,
-    SteganographicChannel
-)
-from sdk.identity import UserIdentity
-
-alice = UserIdentity("+44-7700-900001", platform="whatsapp")
-bob   = UserIdentity("+44-7700-900002", platform="whatsapp")
-
-# Create steganographic channel (mode: emoji_selectors, zero_width, or image_lsb)
-steg_ch = SteganographicChannel(ch_alice, mode="emoji_selectors")
-
-# Encrypt → automatically hidden in emoji variant selectors
-env = steg_ch.encrypt("Classified memo")
-# → "🔐🔒🔓🔔🔕🔖" (appears as normal emoji on WhatsApp timeline)
-
-# Recipient decrypts (reverse lookup invisible variants)
-msg = steg_ch.decrypt(env)  # → "Classified memo"
-
-# Mode 2: Zero-width (hide in normal text)
-steg_ch_zw = SteganographicChannel(ch_bob, mode="zero_width")
-env_zw = steg_ch_zw.encrypt("Budget numbers: 5M", cover_text="Hello world!")
-# → "Hello[ZWJ]world[ZWNJ][WJ]!" (encrypted data invisible; "Hello world!" visible)
-
-# Mode 3: Image LSB (hide in photo)
-steg_ch_img = SteganographicChannel(ch_alice, mode="image_lsb")
-photo_bytes = open("vacation.jpg", "rb").read()
-env_img = steg_ch_img.encrypt("Meet tomorrow noon", image_bytes=photo_bytes)
-# → modified photo bytes with <1% visual change
-```
-
-**Reference:** [sdk/steganography.py](sdk/steganography.py) (480 LOC)
-
----
-
-### Tier 1 Test Results — 28 Tests, 100% Pass Rate
+### Generate a Development Master Key
 
 ```bash
-pytest tests/test_tier1_features.py -v
-# 28 passed in 0.88s
+python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-| Feature | Tests | Status | Coverage |
-|---|---|---|---|
-| Biometric Channel Seal | 7 | ✅ PASS | Enrollment, insufficient events, normal/anomalous rhythm, sealed channel, threat callback |
-| Double Ratchet | 6 | ✅ PASS | Channel creation, message encryption, ratchet interval, key independence, force_ratchet, stats |
-| Emoji Steganography | 4 | ✅ PASS | Roundtrip, binary, invalid format, invisibility verification |
-| Zero-Width Steganography | 4 | ✅ PASS | Roundtrip, default cover, invisibility, binary |
-| Image Steganography | 3 | ✅ PASS | EXIF encode/decode, LSB encode/decode, capacity |
-| Steganographic Channel | 4 | ✅ PASS | Emoji mode, zero-width mode, invalid mode, info |
+Set the generated 64-character value as `SUMIT_MASTER_KEY_HEX` using the environment-variable method appropriate to the operating system.
 
-**NIST Validation:**
-- Biometric Z-score distribution: Normal (0.52), Anomalous (11.59)
-- Double Ratchet key independence: 16/16 unique entropy per epoch
-- Steganography invisibility: Emoji 4x expansion, zero-width 65.8% invisible, image <1% visual change
-
-**Documentation:** [TIER1_FEATURES.md](TIER1_FEATURES.md) (450+ lines with academic references)
+If the variable is not configured, the application generates a temporary key and displays a warning. This behaviour is suitable only for temporary development.
 
 ---
 
-## Performance
+## Running the Application
 
-Benchmarks collected on Python 3.11, AMD Ryzen 9 5900X, Ubuntu 22.04, `cryptography` 42.0. Run your own with `curl http://localhost:8000/benchmark` after starting the full API.
-
-| Operation | p50 | p99 | Notes |
-|---|---|---|---|
-| AES-256-GCM encrypt 1 KB | ~5 µs | ~8 µs | Includes 96-bit nonce generation |
-| AES-256-GCM encrypt 1 MB | ~1.1 ms | ~1.5 ms | |
-| HKDF-SHA3-256 derive | ~9 µs | ~13 µs | Per call |
-| `pool_entropy()` | ~14 µs | ~22 µs | SHA3-256 over feature vector |
-| Channel key derivation | ~18 µs | ~28 µs | HKDF + SHA3-256 over sorted IDs |
-| ML-KEM-1024 keygen | ~1.4 ms | ~2.2 ms | `kyber-py` |
-| ML-KEM-1024 encapsulate | ~1.1 ms | ~1.9 ms | |
-| ML-KEM-1024 decapsulate | ~1.2 ms | ~2.0 ms | |
-| Argon2id (64 MB, t=1) | ~1.8 s | ~2.4 s | **Intentional** — memory-hard per RFC 9106 |
-| Ghost encrypt 1 KB | ~22 µs | ~36 µs | Keygen + AES + key zeroize |
-
-> **Argon2id note.** The ~1.8 s latency in Stack B is by design: as a memory-hard function (RFC 9106) it renders offline dictionary attacks computationally infeasible. Use Stack A (AES-256-GCM direct) when throughput is the priority.
-
----
-
-## Test Suite — 346 Passing
+### Direct Execution
 
 ```bash
-python -m pytest tests/ -q
-# 346 passed (318 core + 28 tier1), 2 skipped (mouse hardware not available in CI) in ~33s
+python app.py
 ```
 
-| Test file | Tests | Coverage |
-|---|---|---|
-| `test_identity.py` | 28 | Per-user identity, channel key derivation, all-platform isolation |
-| `test_connectivity.py` | 53 | Cross-stack connectivity — all 8 stacks × all interfaces |
-| `test_logical_fixes.py` | 17 | `vault_store` password guard, `MITMShield` AAD, serverless POST body |
-| `test_file_decrypt_aad.py` | 14 | Filename AAD binding + rename-attack detection |
-| `test_integration_system.py` | — | Full system integration across all layers |
-| `test_blackbox_security.py` | — | Black-box security properties (GCM tag forge attempts) |
-| `test_adversarial_scenarios.py` | — | Adversarial replay, impersonation, cross-platform scenarios |
-| `test_attack_and_device_scenarios.py` | — | Device-loss, replay, and account-hijack scenarios |
-| `test_deep_audit.py` | — | Vault TTL expiry, sequence tracking, API key auth |
-| `test_security_audit.py` | — | NIST compliance, nonce hygiene, FIDO2 gap coverage |
-| `test_browser_extension.py` | — | Extension manifest and content-security-policy verification |
-| `test_sandbox.py` | — | Synthetic-event pipeline smoke tests |
-| **`test_tier1_features.py`** | **28** | **Biometric seal (7) · Double ratchet (6) · Steganography (15)** |
+### Uvicorn Execution
+
+```bash
+uvicorn app:app --host 127.0.0.1 --port 8000
+```
+
+### Available Development URLs
+
+| URL                                  | Purpose                               |
+| ------------------------------------ | ------------------------------------- |
+| `http://127.0.0.1:8000/health`       | Health and version information        |
+| `http://127.0.0.1:8000/info`         | Architecture and security information |
+| `http://127.0.0.1:8000/docs`         | Swagger interactive API documentation |
+| `http://127.0.0.1:8000/redoc`        | ReDoc API documentation               |
+| `http://127.0.0.1:8000/openapi.json` | OpenAPI specification                 |
 
 ---
 
 ## API Reference
 
-### SDK Server — 4 endpoints (1 dependency)
-
-```bash
-uvicorn sdk.server:app --port 8001
-```
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/health` | GET | Liveness check |
-| `/key/new` | POST | Generate key (random or passphrase-derived) |
-| `/encrypt` | POST | Encrypt text or binary content |
-| `/encrypt-file` | POST | Encrypt a binary file |
-| `/decrypt` | POST | Decrypt any envelope |
-
-### Full REST API — 30+ endpoints
-
-```bash
-uvicorn api:app --port 8000
-# Interactive docs → http://localhost:8000/docs
-```
+The authoritative v3.0.0 application exposes 16 project endpoints.
 
 <details>
-<summary>Full endpoint table</summary>
+<summary><b>Health and Information</b></summary>
 
-| Endpoint | Stack | Description |
-|---|---|---|
-| `POST /generate` | A | Mouse entropy → key + random number |
-| `POST /encrypt/message` | A | AES-256-GCM message encrypt |
-| `POST /decrypt/message` | A | AES-256-GCM message decrypt |
-| `POST /ghost/encrypt` | A | One-time ghost package (burn-after-read) |
-| `POST /ghost/decrypt` | A | Open ghost package once; key is zeroized |
-| `POST /generate-and-encrypt` | A | Single-step key generation + encrypt |
-| `POST /quantum/keygen` | B | ML-KEM-1024 keypair generation |
-| `POST /quantum/encrypt` | B | ML-KEM + Argon2id + AES-256-GCM encrypt |
-| `POST /quantum/decrypt` | B | Quantum-safe decrypt |
-| `POST /vault/serverless` | C | ZKP / Shamir / Vault action dispatcher |
-| `POST /encrypt/rotating-message` | D | 0.3-second rotating key encrypt |
-| `POST /decrypt/rotating-message` | D | Rotating key decrypt |
-| `POST /encrypt/self-healing` | D | Self-healing envelope encrypt |
-| `GET /benchmark` | — | AES / Argon2id / ML-KEM / MAYO timing |
-| `GET /threat-model` | — | Full cryptographic threat analysis |
-| `GET /debug/pipeline` | — | Synthetic pipeline trace |
-| `GET /nist/experiments` | — | Run NIST SP 800-22 battery |
+| Endpoint  | Method | Description                                                           |
+| --------- | ------ | --------------------------------------------------------------------- |
+| `/health` | GET    | Return status, version, enrolled-user count and pending-message count |
+| `/info`   | GET    | Describe architecture, cryptography and replay controls               |
 
 </details>
 
+<details>
+<summary><b>Behavioural Authentication</b></summary>
+
+| Endpoint          | Method | Description                                                       |
+| ----------------- | ------ | ----------------------------------------------------------------- |
+| `/auth/enrol`     | POST   | Create an enrolled behavioural template and protected user secret |
+| `/auth/challenge` | POST   | Issue a fresh purpose-bound authentication challenge              |
+| `/auth/verify`    | POST   | Verify a new behavioural sample and issue an authentication token |
+
+</details>
+
+<details>
+<summary><b>Message Encryption</b></summary>
+
+| Endpoint           | Method | Description                                                           |
+| ------------------ | ------ | --------------------------------------------------------------------- |
+| `/message/encrypt` | POST   | Authenticate sender, generate a fresh DEK and encrypt for a recipient |
+| `/message/decrypt` | POST   | Authenticate recipient, unwrap the DEK and decrypt once               |
+
+</details>
+
+<details>
+<summary><b>OTP Fallback</b></summary>
+
+| Endpoint               | Method | Description                            |
+| ---------------------- | ------ | -------------------------------------- |
+| `/fallback/otp/issue`  | POST   | Create a short-lived OTP digest record |
+| `/fallback/otp/verify` | POST   | Verify and consume a one-time OTP      |
+
+</details>
+
+<details>
+<summary><b>Simulated NFC Fallback</b></summary>
+
+| Endpoint                  | Method | Description                                   |
+| ------------------------- | ------ | --------------------------------------------- |
+| `/fallback/nfc/register`  | POST   | Register a simulated challenge-response token |
+| `/fallback/nfc/challenge` | POST   | Generate a fresh token challenge              |
+| `/fallback/nfc/verify`    | POST   | Verify and consume the HMAC response          |
+
+</details>
+
+<details>
+<summary><b>Research and Administration</b></summary>
+
+| Endpoint                          | Method | Description                                          |
+| --------------------------------- | ------ | ---------------------------------------------------- |
+| `/research/conditioned-behaviour` | POST   | Produce research-only conditioned behavioural output |
+| `/research/os-csprng-baseline`    | POST   | Produce a separate OS-CSPRNG baseline                |
+| `/research/metrics`               | POST   | Calculate accuracy, FAR, FRR and TAR                 |
+| `/admin/state`                    | GET    | Inspect protected in-memory state                    |
+
+</details>
+
+Complete request and response schemas are available through:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
 ---
 
-## Error Reference
+## Browser Extension
 
-All SDK errors are `SumitKeyError` (subclass of `ValueError`). Decryption failures specifically raise `DecryptionError` (subclass of `SumitKeyError`).
+The corrected extension architecture contains:
 
-| Message | Cause | Fix |
-|---|---|---|
-| `GCM authentication failed` | Wrong key, tampered ciphertext, or wrong channel direction | Confirm both sides use the same `shared_secret` and platform label |
-| `filename AAD mismatch` | `expected_name=` does not match the name embedded in the ciphertext | Pass the original filename, or omit `expected_name` |
-| `associated_data mismatch` | `MITMShield.receive()` AAD differs from sender's | Ensure both sides pass identical `associated_data` bytes |
-| `master_password is required` | `vault_store` called without a password | Include `master_password` in the request payload |
-| `entropy health check failed` | Captured input is constant, dominated, or contains a long run | Capture more varied mouse/keyboard input before key generation |
-| `user_id must not be empty` | `UserIdentity("")` | Pass a non-empty string identifier |
-| `shared_secret decode failed` | `shared_secret` is not valid URL-safe base64 | Use the output of `new_shared_secret()` or a 32-byte base64-encoded value |
+| File            | Role                                                                          |
+| --------------- | ----------------------------------------------------------------------------- |
+| `content.js`    | Capture mouse coordinates, timestamps, dwell time and flight time             |
+| `background.js` | Coordinate enrolment, authentication, encryption, decryption and OTP requests |
+| `popup.js`      | Provide the extension user interface                                          |
+| `manifest.json` | Configure the Chrome Manifest V3 extension                                    |
+
+### Corrected Capture Behaviour
+
+The extension:
+
+* records mouse x/y coordinates;
+* uses `performance.now()` for high-resolution timing;
+* records dwell and flight time;
+* does not send the characters typed;
+* limits mouse and keyboard buffer sizes; and
+* clears capture buffers after each session.
+
+### Corrected Background Commands
+
+The final background workflow uses commands such as:
+
+```text
+sumit_health
+sumit_set_api
+sumit_set_device
+sumit_enrol
+sumit_authenticate
+sumit_encrypt
+sumit_decrypt
+sumit_otp_issue
+sumit_otp_verify
+```
+
+> [!CAUTION]
+> The popup interface must use the corrected `sumit_*` background commands. If `popup.js` still sends legacy commands such as `get_state`, `create_package` or `unlock_now`, it must be updated before the extension is demonstrated.
+
+---
+
+## Research and Evaluation
+
+### Behavioural Authentication Metrics
+
+The `/research/metrics` endpoint calculates:
+
+| Metric                          | Meaning                                       |
+| ------------------------------- | --------------------------------------------- |
+| **Accuracy**                    | Proportion of all correctly classified trials |
+| **True Acceptance Rate (TAR)**  | Proportion of genuine attempts accepted       |
+| **False Acceptance Rate (FAR)** | Proportion of impostor attempts accepted      |
+| **False Rejection Rate (FRR)**  | Proportion of genuine attempts rejected       |
+
+The final dissertation should also report precision, recall, F1-score and a confusion matrix when the available trial data permits these calculations.
+
+### Behaviour-Conditioned Research Output
+
+`/research/conditioned-behaviour` applies SHA3-256 conditioning to selected behavioural features.
+
+This output:
+
+* is for research comparison only;
+* does not include OS-CSPRNG material;
+* is not the AES encryption key;
+* does not prove min-entropy;
+* does not prove behavioural uniqueness; and
+* does not establish NIST or FIPS certification.
+
+### OS-CSPRNG Baseline
+
+`/research/os-csprng-baseline` generates an independent operating-system randomness baseline using:
 
 ```python
-from sdk.core import SumitKeyError
-
-try:
-    plain = ch_bob.decrypt(envelope)
-except SumitKeyError as e:
-    # Wrong key, tampered ciphertext, or platform mismatch
-    handle_error(e)
+os.urandom(32)
 ```
+
+The behavioural research output and OS-CSPRNG-generated message DEKs must remain separate in the evaluation.
+
+### Ephemeral-Key Lifetime
+
+The application measures local raw-DEK lifetime during encryption and decryption.
+
+The default:
+
+```text
+0.03 seconds
+```
+
+is an experimental target rather than a guaranteed property. It should be described as achieved only if repeatable results from the final implementation support that conclusion.
+
+### Accuracy Claims
+
+No accuracy percentage should be included in the README or dissertation unless it is calculated from genuine-user and impostor trials.
+
+The previously stated `99.98%` figure must not be used without supporting experimental evidence.
 
 ---
 
-## Production Deployment
+## Testing
 
-### Docker
+Install Pytest:
 
 ```bash
-docker build -t sumitkey:1.0.0 .
-docker run -d --name sumitkey -p 8001:8001 --restart unless-stopped sumitkey:1.0.0
+python -m pip install pytest
 ```
 
-### Kubernetes
+Run the available suite:
 
-```yaml
-# k8s/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: sumitkey
-spec:
-  replicas: 3
-  selector: {matchLabels: {app: sumitkey}}
-  template:
-    metadata: {labels: {app: sumitkey}}
-    spec:
-      containers:
-      - name: sumitkey
-        image: sumitkey:1.0.0
-        ports: [{containerPort: 8001}]
-        resources:
-          requests: {memory: "128Mi", cpu: "100m"}
-          limits:   {memory: "512Mi", cpu: "500m"}
-        livenessProbe:
-          httpGet: {path: /health, port: 8001}
-          initialDelaySeconds: 5
-          periodSeconds: 10
+```bash
+python -m pytest tests/ -q
+```
+
+A fixed passing-test badge should be added only after the complete final test suite has been executed successfully in the documented environment.
+
+### Required Final Test Coverage
+
+| Area              | Required checks                                                     |
+| ----------------- | ------------------------------------------------------------------- |
+| Enrolment         | Valid enrolment, unknown user and duplicate enrolment               |
+| Capture quality   | Insufficient events, short capture and repeated positions           |
+| Authentication    | Genuine acceptance, impostor rejection and threshold behaviour      |
+| Replay protection | Challenge reuse, token reuse and trace reuse                        |
+| Encryption        | Successful encryption and fresh DEK generation                      |
+| Decryption        | Correct recipient, wrong recipient and one-time consumption         |
+| Integrity         | Modified ciphertext and authenticated-metadata rejection            |
+| Expiry            | Challenge, token, OTP and message expiry                            |
+| OTP               | Correct code, incorrect code, attempt limit, resend and reuse       |
+| NFC               | Registration, valid response, invalid response and challenge replay |
+| Metrics           | Accuracy, TAR, FAR and FRR calculation                              |
+| Key lifetime      | Encryption and decryption raw-DEK measurement                       |
+
+> [!NOTE]
+> Much of the existing test suite evaluates legacy modules. Dedicated tests for the authoritative `app.py` workflow should be included before publishing a verified total.
+
 ---
-apiVersion: v1
-kind: Service
-metadata: {name: sumitkey}
-spec:
-  selector: {app: sumitkey}
-  ports: [{port: 8001, targetPort: 8001}]
-```
 
-```bash
-kubectl apply -f k8s/deployment.yaml
-```
+## Threat Model
 
-### Environment variables
-
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `8001` | Listen port |
-| `SUMITKEY_API_KEY` | — | Optional bearer token for endpoint protection |
-| `SUMITKEY_LOG_LEVEL` | `info` | `debug` / `info` / `warning` |
-
-### Health check
-
-```bash
-curl http://localhost:8001/health
-# → {"status":"ok","version":"1.0.0"}
-```
-
-> **Rate limiting.** The API enforces 10 requests/minute and 100 requests/hour per IP by default. Blocked IPs and threat events are logged with a monotonic timestamp, originating IP, and (for LAN clients) MAC address.
+| Threat                          | Status                             | Control or limitation                                      |
+| ------------------------------- | ---------------------------------- | ---------------------------------------------------------- |
+| Reused authentication challenge | Mitigated                          | Challenge is single-use and expires                        |
+| Reused authentication token     | Mitigated                          | Token is short-lived, purpose-bound and consumed           |
+| Replayed behavioural trace      | Mitigated within configured window | Canonical trace hash stored temporarily                    |
+| Wrong recipient                 | Mitigated                          | Message and wrapped DEK are recipient-bound                |
+| Modified ciphertext             | Mitigated                          | AES-GCM authentication tag verification                    |
+| Replayed message                | Mitigated                          | Message is consumed after successful decryption            |
+| Expired message                 | Mitigated                          | Package expiry checked before decryption                   |
+| OTP brute force                 | Partially mitigated                | Attempt limit, expiry and resend delay                     |
+| NFC UID copying                 | Mitigated in prototype design      | UID alone is not accepted                                  |
+| Compromised application server  | Not mitigated                      | Server is part of the trust boundary                       |
+| Malware on user device          | Not mitigated                      | Malware may capture plaintext or behavioural information   |
+| Behavioural variation           | Partially mitigated                | Configurable threshold and fallback authentication         |
+| Process restart                 | Not mitigated                      | In-memory state is lost                                    |
+| Physical memory recovery        | Not fully mitigated                | Python cannot guarantee complete zeroisation               |
+| Large-scale deployment attack   | Not evaluated                      | Prototype has no hardened persistence or distributed state |
 
 ---
 
 ## Key Material Hygiene
 
-| Rule | Implementation |
-|---|---|
-| **Never written to disk** | `results/*.json` stores only `fp:sha256[:16]` fingerprint — raw `key_hex` never saved |
-| **Never in URLs or logs** | All sensitive endpoints use POST body Pydantic models; no `Query(key_hex=...)` |
-| **API key opt-in** | `/generate` returns `key_fingerprint` by default; full key only with `?include_key=true` |
-| **Memory-only vault** | Ghost keys zeroized (`bytearray` overwrite with zeros) on use or TTL expiry |
-| **Filename binding** | `decrypt_file(expected_name="x.txt")` — silent rename raises `ValueError` (constant-time check) |
-| **MITMShield AAD** | `associated_data` mismatch checked with `hmac.compare_digest` after HMAC verification |
+| Rule                                 | Implementation                                                |
+| ------------------------------------ | ------------------------------------------------------------- |
+| **Behaviour is not the message key** | Authentication and cryptographic key generation are separated |
+| **Fresh message key**                | New 32-byte DEK generated for every message                   |
+| **Fresh GCM nonce**                  | New 12-byte nonce generated for each encryption               |
+| **Protected stable secret**          | Encrypted using the server master key                         |
+| **User-specific KEK**                | Derived with HKDF-SHA256                                      |
+| **Recipient binding**                | DEK wrapped using the recipient’s KEK                         |
+| **Raw DEK not returned**             | API returns the message identifier rather than the DEK        |
+| **Single-use tokens**                | Authentication tokens are consumed after use                  |
+| **Single-use messages**              | Successful decryption consumes the message                    |
+| **OTP digest storage**               | HMAC digest stored instead of plaintext OTP                   |
+| **Temporary buffers**                | Mutable key buffers are overwritten when practical            |
+
+Python and its cryptographic libraries may create internal immutable copies. The prototype therefore cannot guarantee complete physical memory zeroisation.
+
+---
+
+## Legal, Social, Ethical and Professional Issues
+
+### Ethical Issues
+
+Behavioural information may constitute sensitive profiling data. Participant-based evaluation should include:
+
+* informed consent;
+* a clear study explanation;
+* voluntary participation;
+* withdrawal rights;
+* anonymised participant identifiers;
+* restricted data access; and
+* defined retention and deletion periods.
+
+### Privacy and Data Protection
+
+The project follows a data-minimisation approach by recording keyboard timing rather than typed characters.
+
+The following information should not be placed in analytics, screenshots or long-term logs:
+
+* raw behavioural traces;
+* plaintext messages;
+* OTP values;
+* stable user secrets;
+* KEKs;
+* DEKs; and
+* master-key values.
+
+### Social and Accessibility Considerations
+
+Behavioural authentication may disadvantage:
+
+* users with motor impairments;
+* users with temporary injuries;
+* elderly users;
+* users affected by fatigue or stress;
+* users working with unfamiliar hardware; and
+* users switching between a mouse and trackpad.
+
+An accessible alternative authentication mechanism should remain available.
+
+### Professional Responsibilities
+
+Developers and researchers should:
+
+* make only evidence-supported security claims;
+* distinguish a prototype from a production system;
+* document known limitations;
+* avoid describing statistical testing as formal certification;
+* avoid presenting simulated NFC as deployed hardware security;
+* use responsible vulnerability disclosure; and
+* obtain appropriate ethical approval before collecting participant data.
 
 ---
 
 ## Security Limitations
 
 <details>
-<summary>View documented limitations</summary>
+<summary><b>View documented limitations</b></summary>
 
-1. **Pre-encryption malware** — Kernel-level or browser-level access can intercept plaintext before the crypto layer. No key derivation system defends against this.
+1. **Trusted-server architecture**
+   The server temporarily handles plaintext, KEKs and DEKs during authorised operations.
 
-2. **Presence score (local browser mode)** — Mouse/keystroke count is a UI gate, not a cryptographic commitment. A determined attacker controlling the browser environment cannot be stopped by score gating alone.
+2. **In-memory state**
+   Users, challenges, authentication tokens, messages, OTP records and NFC records are lost when the application restarts.
 
-3. **40-bit ghost code** — Approximately 40 bits of security. Suitable for demonstration purposes; use FIDO2/WebAuthn for production second factors on high-value secrets.
+3. **Temporary development key**
+   A random master key is generated when `SUMIT_MASTER_KEY_HEX` is not configured.
 
-4. **ARP MAC lookup is LAN-only** — Remote attackers show `"unknown"` in the threat log. MAC resolution is only effective for same-subnet intrusions.
+4. **Behavioural instability**
+   Results may be affected by fatigue, stress, injury, DPI, polling rate, mouse type, keyboard type or environmental conditions.
 
-5. **NIST tests are statistical, not FIPS-certified** — These are engineering checks for output quality, not a formal FIPS 140-3 certification.
+5. **Threshold calibration**
+   The default threshold requires validation with genuine-user and impostor datasets.
 
-6. **Schnorr ZKP is classical** — The ZKP in Stack C does not resist Shor's algorithm. Stack B (ML-KEM-1024) must be used for post-quantum key agreement.
+6. **Python memory management**
+   Complete physical zeroisation of every key copy cannot be guaranteed.
 
-See [SECURITY_LIMITATIONS.md](SECURITY_LIMITATIONS.md) for the complete checklist.
+7. **OTP delivery**
+   The prototype creates and verifies OTP records but does not include a real email or SMS provider.
+
+8. **Simulated NFC**
+   The NFC component uses HMAC challenge-response and is not a deployed EMV, smart-card or FIDO2 implementation.
+
+9. **No production persistence**
+   The system does not include a hardened database, external key-management service or distributed state store.
+
+10. **No formal certification**
+    The prototype has not received independent penetration testing, formal cryptographic verification or accredited FIPS validation.
+
+11. **Browser-extension interface**
+    The popup commands must be synchronised with the corrected background workflow.
+
+12. **Legacy components**
+    Older modules implement different architectures and must not be treated as the authoritative final system.
 
 </details>
 
@@ -1448,50 +905,68 @@ See [SECURITY_LIMITATIONS.md](SECURITY_LIMITATIONS.md) for the complete checklis
 ## Project Layout
 
 <details>
-<summary>View full project structure</summary>
+<summary><b>View project structure</b></summary>
 
-```
+```text
+├── app.py
+│   Authoritative v3.0.0 FastAPI application:
+│   behavioural enrolment, authentication, KEK/DEK encryption,
+│   replay protection, OTP, NFC and research metrics.
+│
+├── browser_extension/
+│   ├── content.js
+│   │   Mouse and timing-only keyboard capture.
+│   ├── background.js
+│   │   Enrolment, authentication and encryption orchestration.
+│   ├── popup.js
+│   │   Browser-extension user interface.
+│   └── manifest.json
+│       Chrome Manifest V3 configuration.
+│
+├── requirements.txt
+│   Python runtime dependencies.
+│
+├── tests/
+│   Legacy, security and integration tests.
+│
+├── results/
+│   Existing experimental reports and outputs.
+│
+├── docs/
+│   Architecture images and supporting material.
+│
+├── api.py
+│   Legacy/experimental API.
+│
+├── main.py
+│   Legacy entropy-generation command-line application.
+│
+├── capture.py
+│   Legacy hardware-capture implementation.
+│
+├── entropy_engine.py
+│   Legacy entropy-feature pipeline.
+│
+├── key_generator.py
+│   Legacy behaviour-derived key workflow.
+│
 ├── sdk/
-│   ├── identity.py             Per-user UserIdentity + Channel key derivation
-│   ├── core.py                 SumitKey class (1 dependency: cryptography)
-│   ├── server.py               Lightweight FastAPI server (4 endpoints)
-│   ├── sumitkey.js             Browser SDK (zero deps · Web Crypto API)
-│   └── integrations/
-│       ├── whatsapp.py         Individual identities · phone-number bound
-│       ├── telegram.py         Individual identities · username bound
-│       ├── gmail_drive.py      Individual identities · personal + shared keys
-│       └── instagram_twitter.py  Individual identities · @handle bound
-├── main.py                     CLI key generation + NIST experiments
-├── capture.py                  Mouse and keyboard event capture
-├── entropy_engine.py           Feature extraction and entropy pooling
-├── key_generator.py            HKDF-SHA3-256 key derivation
-├── api.py                      Full REST API (FastAPI, 30+ endpoints)
-├── crypto_tools.py             ⬤ Classical + quantum-hybrid file encryption
-├── vault.py                    ⬤ ZKP · Shamir SSS · Vault lifecycle · MITM Shield
-├── advanced_security.py        ⬤ Rotating-key envelope + threat detection
-├── self_healing.py             ⬤ Self-healing crypto service
-├── security.py                 Rate limiting · threat logger · IP/MAC resolution
-├── nist_validator.py           NIST SP 800-22 statistical test battery
-├── crypto_benchmark.py         ⬤ Performance benchmark suite
-├── threat_model.py             ⬤ Cryptographic threat model framework
-├── browser_extension/          Chrome MV3 extension (no server required)
-├── tests/                      318 passing · 2 skipped (mouse hardware)
-├── scripts/                    Demo utilities and NIST experiment scripts
-├── docs/images/                SVG architecture and flow diagrams
-├── flow.html                   Interactive visual system flow (7 tabs)
-├── SPEAKING_NOTES.md           Dissertation presentation notes
-├── STACKOVERFLOW_POST.md       Technical Q&A reference
-├── SECURITY.md                 Vulnerability disclosure policy
-├── CHANGELOG.md                Full version history (semver 2.0)
-├── Dockerfile                  Production container image
-├── k8s/deployment.yaml         Kubernetes Deployment + Service
-├── .github/CODEOWNERS          All files require @rock4007 review
-├── .github/CONTRIBUTING.md     Access request process
-├── .github/ISSUE_TEMPLATE/     Bug report and feature request forms
-└── docs/images/                SVG architecture and flow diagrams
+│   Legacy and experimental SDK components.
+│
+├── SECURITY.md
+│   Vulnerability-disclosure policy.
+│
+├── SECURITY_LIMITATIONS.md
+│   Additional security limitations.
+│
+├── LICENSE
+│   Dual-licence terms.
+│
+└── README.md
+    Project documentation.
 ```
 
-`⬤` proprietary — All Rights Reserved
+The older modules are retained for comparison and historical development evidence. They do not replace the final `app.py` architecture.
 
 </details>
 
@@ -1499,51 +974,81 @@ See [SECURITY_LIMITATIONS.md](SECURITY_LIMITATIONS.md) for the complete checklis
 
 ## Dependency Matrix
 
-| Layer | Runtime dependencies |
-|---|---|
-| `sdk/identity.py` + `sdk/core.py` | `cryptography` only (1 dependency) |
-| `sdk/server.py` | `cryptography`, `fastapi`, `uvicorn` |
-| `sdk/sumitkey.js` | None — Web Crypto API is built into every browser |
-| Full stack (`api.py`, `vault.py`, etc.) | `cryptography`, `argon2-cffi`, `kyber-py`, `fastapi`, `uvicorn`, `pynput`, `numpy`, `nistrng` |
+| Component                  | Main dependencies                               |
+| -------------------------- | ----------------------------------------------- |
+| `app.py`                   | FastAPI, Uvicorn, Pydantic, Cryptography        |
+| Browser extension          | Chrome Manifest V3 and standard JavaScript APIs |
+| Legacy entropy experiments | NumPy, Pynput, NIST-related utilities           |
+| Testing                    | Pytest                                          |
+| Development environment    | Python 3.12 or later                            |
+
+---
+
+## Standards and References
+
+| Standard                     | Relevance                                            |
+| ---------------------------- | ---------------------------------------------------- |
+| NIST SP 800-38D              | AES-GCM authenticated encryption                     |
+| NIST SP 800-57 Part 1 Rev. 5 | Cryptographic key-management principles              |
+| NIST SP 800-63B-4            | Authentication and authenticator-management guidance |
+| RFC 5869                     | HKDF extract-and-expand key derivation               |
+| FIPS 197                     | Advanced Encryption Standard                         |
+
+Passing local statistical tests does not constitute NIST or FIPS certification of the project.
 
 ---
 
 ## License
 
-Files marked `⬤` are **proprietary — All Rights Reserved**.
-All other files are **MIT licensed**.
+See [LICENSE](LICENSE) for the complete dual-licence terms and [licenses/THIRD_PARTY_LICENSES.md](licenses/THIRD_PARTY_LICENSES.md) for third-party dependency information.
 
-Copyright © 2026 Soumodeep Guha ([rock4007](https://github.com/rock4007))
+Files identified as proprietary in `LICENSE` remain **All Rights Reserved**. Other specifically identified files are available under the MIT License.
+
+Copyright © 2026 Soumodeep Guha ([rock4007](https://github.com/rock4007)).
+
+> [!WARNING]
+> The current `LICENSE` states that the repository must remain private while proprietary components are included. Do not make the GitHub repository public unless those components are removed or the licence terms are changed appropriately.
 
 ---
 
 ## Versioning
 
-This project follows [Semantic Versioning 2.0.0](https://semver.org). See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+This project follows Semantic Versioning principles.
 
-**Current stable:** `v1.0.0`
+| Version  | Status                   | Description                                                          |
+| -------- | ------------------------ | -------------------------------------------------------------------- |
+| `v1.0.0` | Legacy                   | Behavioural-entropy, identity-channel and ghost-package architecture |
+| `v2.0.0` | Legacy/experimental      | Expanded legacy API and cryptographic stacks                         |
+| `v3.0.0` | Current research version | Behavioural authentication with separate KEK/DEK key management      |
 
-The public API surface (`sdk/core.py`, `sdk/identity.py`, `sdk/server.py`) is stable. Internal modules marked `⬤` may change in minor versions without notice.
+### Current Version
 
----
+```text
+v3.0.0 — Research Prototype
+```
 
-## Contributing
-
-See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) for the full contribution process.
-
-All pull requests must:
-- Include tests covering the new behaviour
-- Pass the full 318-test suite (`python -m pytest tests/ -q`)
-- Carry a [Developer Certificate of Origin](https://developercertificate.org/) sign-off (`git commit -s`)
-
-> **Security bugs.** Report vulnerabilities via [SECURITY.md](SECURITY.md). Do not open a public issue for a security flaw — responsible disclosure is required.
+The public API should not yet be described as stable or production-ready.
 
 ---
 
 ## Support
 
-| Channel | Use for |
-|---|---|
-| [GitHub Issues](https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-/issues) | Bug reports, feature requests |
-| [GitHub Discussions](https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-/discussions) | Questions, usage help, ideas |
-| [SECURITY.md](SECURITY.md) | Vulnerability disclosure (private) |
+| Channel                                                                                                                      | Purpose                                         |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| [GitHub Issues](https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-/issues)           | Bug reports and reproducible technical problems |
+| [GitHub Discussions](https://github.com/rock4007/generating-random-number-and-key-with-the-mouse-and-keystroke-/discussions) | General questions and research discussion       |
+| [SECURITY.md](SECURITY.md)                                                                                                   | Responsible vulnerability disclosure            |
+
+Security vulnerabilities should not be reported through a public issue.
+
+---
+
+<div align="center">
+
+**SUMIT KEY v3.0.0**
+
+*Behavioural Authentication for Secure Messaging*
+
+**MSc Cybersecurity Research Prototype**
+
+</div>
