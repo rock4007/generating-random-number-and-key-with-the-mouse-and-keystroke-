@@ -170,6 +170,8 @@ def demo_ghost() -> None:
             message="Ghost demo message opens once, then the key is gone.",
             label="sandbox-ghost",
             ttl_seconds=60,
+            recipient_id="sandbox-recipient",
+            session_id="sandbox-session",
         ),
     )
     package = created["package"]
