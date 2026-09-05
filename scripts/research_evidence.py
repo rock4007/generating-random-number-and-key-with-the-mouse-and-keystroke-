@@ -211,6 +211,8 @@ def ghost_once_experiment() -> dict[str, Any]:
             message="ghost research evidence",
             label="research-evidence",
             ttl_seconds=60,
+            recipient_id="research-recipient",
+            session_id="research-session",
         ),
     )
     package = created["package"]

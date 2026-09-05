@@ -574,6 +574,8 @@ class _GhostEncryptBody(BaseModel):
     message: str
     label: str = "ghost-message"
     ttl_seconds: int = 120
+    recipient_id: str
+    session_id: str
 
 
 class _GhostPackageBody(BaseModel):
@@ -586,6 +588,9 @@ class _GhostPackageBody(BaseModel):
     ciphertext_hex: str
     associated_data_hex: str = ""
     key_fingerprint: str = ""
+    recipient_id: str
+    session_id: str
+    message_id: str
 
 
 @app.post("/encrypt/message", summary="Encrypt a text message with an existing key")
@@ -713,12 +718,19 @@ def ghost_encrypt_endpoint(
     _cleanup_expired_ghost_keys()
 
     ttl = max(1, min(int(body.ttl_seconds), _GHOST_MAX_TTL_SECONDS))
+    ghost_id = secrets.token_urlsafe(24)
+    message_id = secrets.token_urlsafe(16)
+    expires_at = time.time() + ttl
     key = os.urandom(32)
     aad = json.dumps(
         {
+            "ghost_id": ghost_id,
+            "recipient_id": body.recipient_id,
+            "session_id": body.session_id,
+            "message_id": message_id,
+            "expires_at": expires_at,
             "label": body.label,
             "mode": "ghost-api",
-            "created_at": time.time(),
         },
         separators=(",", ":"),
     ).encode("utf-8")
@@ -729,8 +741,6 @@ def ghost_encrypt_endpoint(
         threat_logger.log_threat("GHOST_ENCRYPT_FAILED", client_ip, type(exc).__name__)
         raise HTTPException(status_code=500, detail="Ghost encryption failed") from exc
 
-    ghost_id = secrets.token_urlsafe(24)
-    expires_at = time.time() + ttl
     key_buffer = bytearray(key)
     key_fp = _fingerprint(key_buffer)
     with _ghost_lock:
@@ -751,6 +761,9 @@ def ghost_encrypt_endpoint(
             "ciphertext_hex": encrypted.ciphertext.hex(),
             "associated_data_hex": encrypted.associated_data.hex(),
             "key_fingerprint": key_fp,
+            "recipient_id": body.recipient_id,
+            "session_id": body.session_id,
+            "message_id": message_id,
             "expires_at": expires_at,
             "warning": "Demo only. The API can open this once while the ghost key is alive.",
         },

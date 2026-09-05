@@ -378,6 +378,8 @@ class TestStackF_SDK_vs_MainAPI(unittest.TestCase):
                 message="ghost connectivity test",
                 label="stack-F-test",
                 ttl_seconds=60,
+                recipient_id="connectivity-recipient",
+                session_id="connectivity-session",
             ),
         )
         opened = ghost_decrypt_endpoint(

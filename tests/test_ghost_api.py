@@ -265,6 +265,8 @@ def test_ghost_package_opens_once_then_disappears() -> None:
             message="volunteer ghost message",
             label="volunteer-demo",
             ttl_seconds=60,
+            recipient_id="ghost-api-recipient",
+            session_id="ghost-api-session",
         ),
     )
     package = created["package"]
@@ -293,7 +295,12 @@ def test_ghost_status_and_revoke_burn_key() -> None:
 
     created = ghost_encrypt_endpoint(
         _request(),
-        _GhostEncryptBody(message="burn after revoke", ttl_seconds=60),
+        _GhostEncryptBody(
+            message="burn after revoke",
+            ttl_seconds=60,
+            recipient_id="ghost-api-recipient",
+            session_id="ghost-api-session",
+        ),
     )
     package = created["package"]
     alive = ghost_status_endpoint(package["ghost_id"])
